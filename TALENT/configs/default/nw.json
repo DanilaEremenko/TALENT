@@ -1,0 +1,25 @@
+{
+  "nw": {
+    "model": {
+      "dist_mode": "distribution",
+      "dist_model": "linear",
+      "dist_model_biases": false,
+      "dist_norm": "l2",
+      "n_layers": 1,
+      "n_neurons": null,
+      "batch_norm": null,
+      "dropout": null,
+      "act_fn": null,
+      "rbp": 0.5,
+      "init_sigma_mode": "uniform_norm",
+      "init_sigma_n_epoch": null,
+      "init_sigma_n_batches": null,
+      "init_sigma_weights_k": 1
+    },
+    "training": {
+      "lr": 0.01,
+      "weight_decay": 0.0002
+    },
+    "general": {}
+  }
+}

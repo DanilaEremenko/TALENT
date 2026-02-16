@@ -1,0 +1,20 @@
+{
+  "nw": {
+    "model": {
+    },
+    "training": {
+      "lr": [
+        "loguniform",
+        1e-05,
+        0.1
+      ],
+      "weight_decay": [
+        "?loguniform",
+        0.0,
+        1e-06,
+        0.001
+      ]
+    },
+    "general": {}
+  }
+}

@@ -371,7 +371,7 @@ def get_deep_args():
                                  't2gformer', 'tabautopnpnet', 
                                  
                                  'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm', 
-                                 'tabicl', 'mitra', 'limix', 
+                                 'tabicl', 'mitra', 'limix', 'nw'
                                  ])
 
     # optimization parameters
@@ -908,6 +908,8 @@ def get_method(model):
     elif model == 'limix':
         from TALENT.model.methods.limix import LimiXMethod
         return LimiXMethod
-    
+    elif model=='nw':
+        from TALENT.model.methods.nw import NwMethod
+        return NwMethod
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
