@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import time
 import errno
 import pprint
@@ -131,7 +132,8 @@ def set_seeds(base_seed: int, one_cuda_seed: bool = False) -> None:
 
 
 def get_device() -> torch.device:
-    return torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # return torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    return torch.device('cpu')
 
 
 import sklearn.metrics as skm
@@ -278,7 +280,7 @@ def get_classical_args():
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str,
                         default=default_args['model_type'],
-                        choices=['dummy', 'LogReg', 'LinearRegression', 
+                        choices=['dummy', 'LogReg', 'LinearRegression',
                                  'xgboost', 'catboost', 'lightgbm', 'RandomForest',
                                  'svm', 'knn', 'NCM', 'NaiveBayes', 'rfm', 'xrfm',
                                  ])
@@ -363,14 +365,14 @@ def get_deep_args():
         default_args = json.load(f)
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str, default=default_args['model_type'],
-                        choices=['mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr', 
-                                 'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos', 
-                                 'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr', 
+                        choices=['mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr',
+                                 'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos',
+                                 'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr',
                                  'switchtab', 'bishop', 'protogate', 'realmlp', 'mlp_plr',
-                                 'excelformer', 'grande', 'amformer', 'trompt', 'tabm', 
-                                 't2gformer', 'tabautopnpnet', 
-                                 
-                                 'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm', 
+                                 'excelformer', 'grande', 'amformer', 'trompt', 'tabm',
+                                 't2gformer', 'tabautopnpnet',
+
+                                 'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
                                  'tabicl', 'mitra', 'limix', 'nw', 'nwck'
                                  ])
 
@@ -701,6 +703,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         # except Exception as e:
         #     print(e)
         #     return 1e9 if info['task_type'] == 'regression' else 0.0
+        sys.stderr.write(f"{args.model_type} trial: {config['model']}\n")
         method.fit(train_val_data, info, train=True, config=config)
         return method.trlog['best_res']
 
@@ -750,9 +753,9 @@ def get_method(model):
     :model: str, model name
     :return: class, method class
     """
-    
+
     # Deep methods
-    
+
     if model == "mlp":
         from TALENT.model.methods.mlp import MLPMethod
         return MLPMethod
@@ -843,9 +846,9 @@ def get_method(model):
     elif model == 'tabautopnpnet':
         from TALENT.model.methods.tabautopnpnet import TabAutoPNPNetMethod
         return TabAutoPNPNetMethod
-    
+
     # Classical methods
-    
+
     elif model == 'dummy':
         from TALENT.model.classical_methods.dummy import DummyMethod
         return DummyMethod
@@ -887,7 +890,7 @@ def get_method(model):
         return XRFMMethod
 
     # General methods
-    
+
     elif model == 'tabpfn':
         from TALENT.model.methods.tabpfn import TabPFNMethod
         return TabPFNMethod

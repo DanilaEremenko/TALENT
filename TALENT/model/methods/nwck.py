@@ -1,5 +1,4 @@
 import math
-import sys
 
 from torch.nn.functional import one_hot
 
@@ -73,7 +72,6 @@ class NWCKMethod(Method):
             problem_mode=problem_mode,
             model_name=get_best_mname(fit_y=fit_y)
         )
-        sys.stderr.write('Params trial:' + str(model_config) + '\n')
         common_params = {
             'hard_M_lr': None,
             'hard_M_conn_lr': None,
