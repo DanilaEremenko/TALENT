@@ -182,7 +182,9 @@ class ModernNCAMethod(Method):
                 
                 test_logit.append(pred)
                 test_label.append(y)
-                
+
+        self.predict_time = time.time() - tic
+
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
         
