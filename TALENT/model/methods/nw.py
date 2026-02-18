@@ -1,3 +1,5 @@
+import math
+
 from TALENT.model.methods.base import Method
 import time
 import torch
@@ -11,7 +13,7 @@ from typing import Optional
 from TALENT.model.lib.data import (
     Dataset
 )
-from catkernel.nw_kernel import NwKernelModel
+from catkernel.nw_kernel import NwKernelModel, NWScikit
 
 
 def make_random_batches(
@@ -40,15 +42,42 @@ class NwMethod(Method):
         if model_config is None:
             model_config = self.args.config['model']
         cat_size = sum([len(c) for c in self.cat_encoder.categories_]) if self.cat_encoder is not None else 0
-        self.model = NwKernelModel(
+
+        x_B_l = []
+        if self.N is not None:
+            x_B_l.append((self.N['train']))
+
+        if self.C is not None:
+            x_B_l.append((self.C['train']))
+            fn = self.N['train'].shape[1]
+            fc = self.C['train'].shape[1]
+            cat_ids = list(range(fn, fn + fc))
+        else:
+            cat_ids = []
+
+        x_B = torch.concat(x_B_l, dim=1)
+        y_B = self.y['train']
+
+        from hyperparams.hp_nw import get_models_hparams
+        problem_mode = 'reg' if self.D.is_regression else 'clf'
+        fit_y = problem_mode == 'reg'
+        h_params = get_models_hparams(
+            problem_mode=problem_mode,
+            model_name=f'nw_kernel(dist_model=linear, dist_mode=distribution, init_sigma=uniform_norm, fit_y={fit_y}, lvo=True, loss_upd_th=0)'
+        )
+        self.model_sk_wrapper = NWScikit(
             **model_config,
-            in_size=self.d_in + cat_size,
-            out_size=self.d_out,
-            device=self.args.device,
-            kernel_fit_background=self.D.is_regression,
-            problem_mode='reg' if self.D.is_regression else 'clf',
-            cat_ids=None
-        ).to(self.args.device)
+            **h_params.common_params,
+            tmp_dir=None,
+            cat_ids=cat_ids
+            # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
+        )
+
+        self.model_sk_wrapper._model = self.model_sk_wrapper.get_model_instance(
+            X=x_B, y=y_B.unsqueeze(1) if y_B.ndim == 1 else y_B
+        )
+        self.model = self.model_sk_wrapper._model
+
         if self.args.use_float:
             self.model.float()
         else:
@@ -67,14 +96,12 @@ class NwMethod(Method):
         if config is not None:
             self.reset_stats_withconfig(config)
         self.construct_model()
-        self.optimizer = torch.optim.AdamW(
-            self.model.parameters(),
-            lr=self.args.config['training']['lr'],
-            weight_decay=self.args.config['training']['weight_decay']
+        self.optimizers, self.schedulers = self.model_sk_wrapper.get_optimizers_and_schedulers(
+            n_batches=math.ceil(len(self.y['train']) / self.args.batch_size)
         )
         self.train_size = self.N['train'].shape[0] if self.N is not None else self.C['train'].shape[0]
         self.train_indices = torch.arange(self.train_size, device=self.args.device)
-        self.context_size = 96
+
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
         if not train:
             return
@@ -134,8 +161,6 @@ class NwMethod(Method):
 
                 pred = self.model(
                     X=X,
-                    x_background=x_B,
-                    y_background=y_B.unsqueeze(1),
                     indices=None,
                 ).squeeze(-1)
 
@@ -166,6 +191,9 @@ class NwMethod(Method):
         tl = Averager()
         i = 0
         for batch_idx in make_random_batches(self.train_size, self.args.batch_size, self.args.device):
+            for optimizer in self.optimizers:
+                optimizer.zero_grad()
+
             self.train_step = self.train_step + 1
 
             X_num = self.N['train'][batch_idx] if self.N is not None else None
@@ -184,20 +212,18 @@ class NwMethod(Method):
                     y_B = y_B.float()
                     y = y.float()
             X = torch.concat([X_num, X_cat], dim=1) if X_cat is not None else X_num
-            x_B = torch.concat([x_B_num, x_B_cat], dim=1) if X_cat is not None else x_B_num
             pred = self.model(
                 X=X,
-                x_background=x_B,
-                y_background=y_B.unsqueeze(1),
                 indices=batch_idx
             ).squeeze(-1)
 
             loss = self.criterion(pred, y)
 
             tl.add(loss.item())
-            self.optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+
+            for optimizer in self.optimizers:
+                optimizer.step()
 
             if (i - 1) % 50 == 0 or i == len(self.train_loader):
                 print('epoch {}, train {}/{}, loss={:.4f} lr={:.4g}'.format(
@@ -243,8 +269,6 @@ class NwMethod(Method):
 
                 pred = self.model(
                     X=X,
-                    x_background=x_B,
-                    y_background=y_B.unsqueeze(1),
                     indices=None,
                 ).squeeze(-1)
 
