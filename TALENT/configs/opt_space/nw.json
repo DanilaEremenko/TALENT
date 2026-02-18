@@ -1,23 +1,10 @@
 {
   "nw": {
     "model": {
-      "n_layers": [
-        "int",
-        2,
-        10
-      ],
       "dropout": [
         "uniform",
         0.0,
         0.5
-      ],
-      "act_fn": [
-        "categorical",
-        [
-          "relu",
-          "gelu",
-          "selu"
-        ]
       ],
       "adamw_b2": [
         "loguniform",
@@ -43,27 +30,10 @@
         "loguniform",
         1.0E-5,
         10.0
-      ],
-      "dist_model_biases": [
-        "categorical",
-        [
-          false,
-          true
-        ]
       ]
     },
     "training": {
-      "lr": [
-        "loguniform",
-        1e-05,
-        0.1
-      ],
-      "weight_decay": [
-        "?loguniform",
-        0.0,
-        1e-06,
-        0.001
-      ]
+
     },
     "general": {}
   }

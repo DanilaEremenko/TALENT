@@ -63,18 +63,49 @@ class NwMethod(Method):
         if self.args.use_float:
             x_B = x_B.float()
             y_B = y_B.float()
-        from hyperparams.hp_nw import get_models_hparams
+
         problem_mode = 'reg' if self.D.is_regression else 'clf'
-        fit_y = problem_mode == 'reg'
-        h_params = get_models_hparams(
-            problem_mode=problem_mode,
-            model_name=f'nw_kernel(dist_model=linear, dist_mode=distribution, init_sigma=uniform_norm, fit_y={fit_y}, lvo=True, loss_upd_th=0)'
-        )
+        common_params = {
+            "act_fn": None,
+            "dist_model_biases": False,
+            "n_layers": None,
+            "verbose": False,
+            "verbose_tqdm": False,
+            "kernel_fit_background": problem_mode == 'reg',
+            "dist_model": "linear",
+            "dist_mode": "distribution",
+            "dist_norm": "l2",
+            "lvo": True,
+            "init_sigma_mode": "uniform_norm",
+            "loss_upd_th": 0.0,
+            "n_neurons": 32,
+            "batch_norm": True,
+            "optimizer": "AdamW",
+            "batch_size": None,
+            "epoch_n": None,
+            "epoch_n_no_upd_patience": 20,
+            "device": "cpu",
+            "rbp": 0.5,
+            "ensemble_mode": "joint",
+            "init_sigma_n_epoch": None,
+            "init_sigma_n_batches": None,
+            "init_sigma_weights_k": 1.0,
+            "reg_via_clf_mode": None,
+            "reg_via_clf_bins": None,
+            "reg_via_clf_bins_to_sum_part": None,
+            "pretrain_mode": None,
+            "pretrain_n_models": None,
+            "pretrain_n_epochs": None,
+            "scheduler_mode": None,
+            "scheduler_params": None,
+            "problem_mode": problem_mode,
+            "pred_batch_size": 16
+        }
         self.model_sk_wrapper = NWScikit(
             **model_config,
-            **h_params.common_params,
             tmp_dir=None,
-            cat_ids=cat_ids
+            cat_ids=cat_ids,
+            **common_params,
             # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
         )
 

@@ -705,6 +705,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
     if osp.exists(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))) and args.retune == False:
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'rb') as fp:
             args.config = json.load(fp)
+        return args, None
     else:
         # get data property
         if info['task_type'] == 'regression':
@@ -736,7 +737,8 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         args.config = trial_configs[best_trial_id]
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'w') as fp:
             json.dump(args.config, fp, sort_keys=True, indent=4)
-    return args
+
+        return args,study
 
 
 def get_method(model):
@@ -911,5 +913,8 @@ def get_method(model):
     elif model=='nw':
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
+    elif model == 'nwck':
+        from TALENT.model.methods.nwck import NWCKMethod
+        return NWCKMethod
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")
