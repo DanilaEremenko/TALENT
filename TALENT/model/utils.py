@@ -371,7 +371,7 @@ def get_deep_args():
                                  't2gformer', 'tabautopnpnet', 
                                  
                                  'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm', 
-                                 'tabicl', 'mitra', 'limix', 'nw'
+                                 'tabicl', 'mitra', 'limix', 'nw', 'nwck'
                                  ])
 
     # optimization parameters
