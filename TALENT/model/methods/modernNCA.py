@@ -141,6 +141,8 @@ class ModernNCAMethod(Method):
         self.data_format(False, N, C, y)
         
         test_logit, test_label = [], []
+
+        tic = time.time()
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
                 # [cite_start]Restored logic [cite: 201, 202, 203, 204, 205, 206]
