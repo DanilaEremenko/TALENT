@@ -1,5 +1,7 @@
 import math
 
+from torch.nn.functional import one_hot
+
 from TALENT.model.methods.base import Method
 import time
 import torch
@@ -13,7 +15,7 @@ from typing import Optional
 from TALENT.model.lib.data import (
     Dataset
 )
-from catkernel.nw_kernel import NwKernelModel, NWScikit
+from catkernel.nw_kernel import NWScikit
 
 
 def make_random_batches(
@@ -58,6 +60,9 @@ class NwMethod(Method):
         x_B = torch.concat(x_B_l, dim=1)
         y_B = self.y['train']
 
+        if self.args.use_float:
+            x_B = x_B.float()
+            y_B = y_B.float()
         from hyperparams.hp_nw import get_models_hparams
         problem_mode = 'reg' if self.D.is_regression else 'clf'
         fit_y = problem_mode == 'reg'
@@ -73,8 +78,15 @@ class NwMethod(Method):
             # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
         )
 
+        if problem_mode == 'clf':
+            y_B = one_hot(y_B.long()).float()
+        elif problem_mode == 'reg':
+            y_B = y_B.unsqueeze(1)
+        else:
+            raise ValueError(problem_mode)
+
         self.model_sk_wrapper._model = self.model_sk_wrapper.get_model_instance(
-            X=x_B, y=y_B.unsqueeze(1) if y_B.ndim == 1 else y_B
+            X=x_B, y=y_B if y_B.ndim == 1 else y_B
         )
         self.model = self.model_sk_wrapper._model
 
@@ -196,22 +208,20 @@ class NwMethod(Method):
 
             self.train_step = self.train_step + 1
 
-            X_num = self.N['train'][batch_idx] if self.N is not None else None
-            X_cat = self.C['train'][batch_idx] if self.C is not None else None
+            x_l = []
+            if self.N is not None:
+                x_l.append(self.N['train'][batch_idx])
+
+            if self.C is not None:
+                x_l.append(self.C['train'][batch_idx])
+
+            X = torch.concat(x_l, dim=1)
+
             y = self.y['train'][batch_idx]
 
-            x_B_num = self.N['train'] if self.N is not None else None
-            x_B_cat = self.C['train'] if self.C is not None else None
-            y_B = self.y['train']
             if self.args.use_float:
-                X_num = X_num.float() if X_num is not None else None
-                X_cat = X_cat.float() if X_cat is not None else None
-                x_B_num = x_B_num.float() if x_B_num is not None else None
-                x_B_cat = x_B_cat.float() if x_B_cat is not None else None
-                if self.is_regression:
-                    y_B = y_B.float()
-                    y = y.float()
-            X = torch.concat([X_num, X_cat], dim=1) if X_cat is not None else X_num
+                X = X.float()
+
             pred = self.model(
                 X=X,
                 indices=batch_idx
@@ -244,29 +254,9 @@ class NwMethod(Method):
         test_logit, test_label = [], []
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.val_loader)):
-                if self.N is not None and self.C is not None:
-                    X_num, X_cat = X[0], X[1]
-                elif self.C is not None and self.N is None:
-                    X_num, X_cat = None, X
-                else:
-                    X_num, X_cat = X, None
-
-                x_B_num = self.N['train'] if self.N is not None else None
-                x_B_cat = self.C['train'] if self.C is not None else None
-                y_B = self.y['train']
+                X = torch.concat(X, dim=1) if isinstance(X, list) else X
                 if self.args.use_float:
-                    X_num = X_num.float() if X_num is not None else None
-                    X_cat = X_cat.float() if X_cat is not None else None
-                    x_B_num = x_B_num.float() if x_B_num is not None else None
-                    x_B_cat = x_B_cat.float() if x_B_cat is not None else None
-                    if self.is_regression:
-                        y_B = y_B.float()
-
-                x_B_num = self.N['train'] if self.N is not None else None
-                x_B_cat = self.C['train'] if self.C is not None else None
-                x_B = torch.concat([x_B_num, x_B_cat], dim=1) if X_cat is not None else x_B_num
-                y_B = self.y['train']
-
+                    X = X.float()
                 pred = self.model(
                     X=X,
                     indices=None,
