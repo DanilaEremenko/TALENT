@@ -695,12 +695,14 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         trial_configs.append(config)
         # method.fit(train_val_data, info, train=True, config=config)  
         # run with this config
-        try:
-            method.fit(train_val_data, info, train=True, config=config)
-            return method.trlog['best_res']
-        except Exception as e:
-            print(e)
-            return 1e9 if info['task_type'] == 'regression' else 0.0
+        # try:
+        #     method.fit(train_val_data, info, train=True, config=config)
+        #     return method.trlog['best_res']
+        # except Exception as e:
+        #     print(e)
+        #     return 1e9 if info['task_type'] == 'regression' else 0.0
+        method.fit(train_val_data, info, train=True, config=config)
+        return method.trlog['best_res']
 
     if osp.exists(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))) and args.retune == False:
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'rb') as fp:
