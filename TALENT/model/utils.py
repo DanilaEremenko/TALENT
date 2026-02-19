@@ -918,7 +918,7 @@ def get_method(model):
     elif model=='nw':
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
-    elif model == 'nwck':
+    elif model in ['nwck', 'nwck_wd']:
         from TALENT.model.methods.nwck import NWCKMethod
         return NWCKMethod
     else:
