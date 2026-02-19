@@ -6,6 +6,28 @@
         2,
         8
       ],
+      "cat_n_clusters": [
+        "int",
+        2,
+        32
+      ],
+      "clust_model_params": {
+        "clust_model_lr": [
+          "loguniform",
+          1.0E-5,
+          1.0
+        ],
+        "clust_model_weight_decay": [
+          "loguniform",
+          1.0E-5,
+          10.0
+        ],
+        "clust_model_fspace_lr": [
+          "loguniform",
+          1.0E-5,
+          1.0
+        ]
+      },
       "nn_dropout": [
         "uniform",
         0.0,
