@@ -1,4 +1,5 @@
 import math
+import sys
 
 from torch.nn.functional import one_hot
 
@@ -16,6 +17,7 @@ from TALENT.model.lib.data import (
     Dataset
 )
 from catkernel.nw_kernel import NWScikit
+from hyperparams.hp_nw import get_best_mname
 
 
 def make_random_batches(
@@ -43,7 +45,6 @@ class NwMethod(Method):
     def construct_model(self, model_config=None):
         if model_config is None:
             model_config = self.args.config['model']
-        cat_size = sum([len(c) for c in self.cat_encoder.categories_]) if self.cat_encoder is not None else 0
 
         x_B_l = []
         if self.N is not None:
@@ -51,61 +52,37 @@ class NwMethod(Method):
 
         if self.C is not None:
             x_B_l.append((self.C['train']))
-            fn = self.N['train'].shape[1]
-            fc = self.C['train'].shape[1]
-            cat_ids = list(range(fn, fn + fc))
+            n_num_f = self.N['train'].shape[1]
+            n_cat_f = self.C['train'].shape[1]
+            cat_ids = list(range(n_num_f, n_num_f + n_cat_f))
         else:
             cat_ids = []
 
-        x_B = torch.concat(x_B_l, dim=1)
-        y_B = self.y['train']
+        x_B = torch.concat(x_B_l, dim=1).clone()
+        y_B = self.y['train'].clone()
 
         if self.args.use_float:
             x_B = x_B.float()
             y_B = y_B.float()
 
+        from hyperparams import hp_nw
         problem_mode = 'reg' if self.D.is_regression else 'clf'
+        fit_y = problem_mode == 'reg'
+        meta_model = hp_nw.get_models_hparams(
+            problem_mode=problem_mode,
+            model_name=get_best_mname(fit_y=fit_y)
+        )
         common_params = {
-            "act_fn": None,
-            "dist_model_biases": False,
-            "n_layers": None,
-            "verbose": False,
-            "verbose_tqdm": False,
-            "kernel_fit_background": problem_mode == 'reg',
-            "dist_model": "linear",
-            "dist_mode": "distribution",
-            "dist_norm": "l2",
-            "lvo": True,
-            "init_sigma_mode": "uniform_norm",
-            "loss_upd_th": 0.0,
-            "n_neurons": 32,
-            "batch_norm": True,
-            "optimizer": "AdamW",
-            "batch_size": None,
-            "epoch_n": None,
-            "epoch_n_no_upd_patience": 20,
-            "device": "cpu",
-            "rbp": 0.5,
-            "ensemble_mode": "joint",
-            "init_sigma_n_epoch": None,
-            "init_sigma_n_batches": None,
-            "init_sigma_weights_k": 1.0,
-            "reg_via_clf_mode": None,
-            "reg_via_clf_bins": None,
-            "reg_via_clf_bins_to_sum_part": None,
-            "pretrain_mode": None,
-            "pretrain_n_models": None,
-            "pretrain_n_epochs": None,
-            "scheduler_mode": None,
-            "scheduler_params": None,
-            "problem_mode": problem_mode,
-            "pred_batch_size": 16
+            'act_fn': None,
+            'dist_model_biases': False,
+            'n_layers': None
         }
         self.model_sk_wrapper = NWScikit(
             **model_config,
             tmp_dir=None,
             cat_ids=cat_ids,
-            **common_params,
+            **meta_model.common_params,
+            **common_params
             # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
         )
 
@@ -144,7 +121,6 @@ class NwMethod(Method):
         )
         self.train_size = self.N['train'].shape[0] if self.N is not None else self.C['train'].shape[0]
         self.train_indices = torch.arange(self.train_size, device=self.args.device)
-
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
         if not train:
             return
@@ -180,27 +156,11 @@ class NwMethod(Method):
         tic = time.time()
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
-                if self.N is not None and self.C is not None:
-                    X_num, X_cat = X[0], X[1]
-                elif self.C is not None and self.N is None:
-                    X_num, X_cat = None, X
-                else:
-                    X_num, X_cat = X, None
 
-                x_B_num = self.N['train'] if self.N is not None else None
-                x_B_cat = self.C['train'] if self.C is not None else None
-                y_B = self.y['train']
+                X = torch.concat([x for x in X if X is not None], dim=1)
 
                 if self.args.use_float:
-                    X_num = X_num.float() if X_num is not None else None
-                    X_cat = X_cat.float() if X_cat is not None else None
-                    x_B_num = x_B_num.float() if x_B_num is not None else None
-                    x_B_cat = x_B_cat.float() if x_B_cat is not None else None
-                    if self.is_regression:
-                        y_B = y_B.float()
-
-                X = torch.concat([X_num, X_cat], dim=1) if X_cat is not None else X_num
-                x_B = torch.concat([x_B_num, x_B_cat], dim=1) if X_cat is not None else x_B_num
+                    X = X.float()
 
                 pred = self.model(
                     X=X,
@@ -216,7 +176,6 @@ class NwMethod(Method):
         test_label = torch.cat(test_label, 0)
 
         vl = self.criterion(test_logit, test_label).item()
-
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
         # FIX: Denormalize regression predictions
@@ -234,9 +193,6 @@ class NwMethod(Method):
         tl = Averager()
         i = 0
         for batch_idx in make_random_batches(self.train_size, self.args.batch_size, self.args.device):
-            for optimizer in self.optimizers:
-                optimizer.zero_grad()
-
             self.train_step = self.train_step + 1
 
             x_l = []
@@ -261,6 +217,8 @@ class NwMethod(Method):
             loss = self.criterion(pred, y)
 
             tl.add(loss.item())
+            for optimizer in self.optimizers:
+                optimizer.zero_grad()
             loss.backward()
 
             for optimizer in self.optimizers:
@@ -300,6 +258,7 @@ class NwMethod(Method):
         test_label = torch.cat(test_label, 0)
 
         vl = self.criterion(test_logit, test_label).item()
+        vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
         if self.is_regression:
             task_type = 'regression'
@@ -308,10 +267,9 @@ class NwMethod(Method):
             task_type = 'classification'
             measure = np.greater_equal
 
-        vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-
         print('epoch {}, val, loss={:.4f} {} result={:.4f}'.format(epoch, vl, task_type, vres[0]))
         if measure(vres[0], self.trlog['best_res']) or epoch == 0:
+            # sys.stderr.write(f'trial upd metric {dict(zip(metric_name, vres, strict=True))["RMSE"]}')
             self.trlog['best_res'] = vres[0]
             self.trlog['best_epoch'] = epoch
             torch.save(
