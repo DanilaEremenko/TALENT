@@ -373,7 +373,7 @@ def get_deep_args():
                                  't2gformer', 'tabautopnpnet',
 
                                  'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
-                                 'tabicl', 'mitra', 'limix', 'nw', 'nwck'
+                                 'tabicl', 'mitra', 'limix', 'nw', 'nwck', 'nwck_wd', 'nwck_ybopt'
                                  ])
 
     # optimization parameters
@@ -918,7 +918,7 @@ def get_method(model):
     elif model=='nw':
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
-    elif model in ['nwck', 'nwck_wd']:
+    elif model in ['nwck', 'nwck_wd', 'nwck_ybopt']:
         from TALENT.model.methods.nwck import NWCKMethod
         return NWCKMethod
     else:

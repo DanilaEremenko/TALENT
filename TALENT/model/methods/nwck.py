@@ -72,6 +72,8 @@ class NWCKMethod(Method):
             problem_mode=problem_mode,
             model_name=get_best_mname(fit_y=fit_y)
         )
+        if 'kernel_fit_background' in model_config:
+            del meta_model.common_params['kernel_fit_background']
         common_params = {
             'hard_M_lr': None,
             'hard_M_conn_lr': None,
