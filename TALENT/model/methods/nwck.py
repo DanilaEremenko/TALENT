@@ -48,11 +48,13 @@ class NWCKMethod(Method):
 
         x_B_l = []
         if self.N is not None:
+            n_num_f = self.N['train'].shape[1]
             x_B_l.append((self.N['train']))
+        else:
+            n_num_f = 0
 
         if self.C is not None:
             x_B_l.append((self.C['train']))
-            n_num_f = self.N['train'].shape[1]
             n_cat_f = self.C['train'].shape[1]
             cat_ids = list(range(n_num_f, n_num_f + n_cat_f))
         else:
