@@ -91,12 +91,12 @@ class NwMethod(Method):
         if problem_mode == 'clf':
             y_B = one_hot(y_B.long()).float()
         elif problem_mode == 'reg':
-            y_B = y_B.unsqueeze(1)
+            y_B = y_B.unsqueeze(1) if y_B.ndim == 1 else y_B
         else:
             raise ValueError(problem_mode)
 
         self.model_sk_wrapper._model = self.model_sk_wrapper.get_model_instance(
-            X=x_B, y=y_B if y_B.ndim == 1 else y_B
+            X=x_B, y=y_B
         )
         self.model = self.model_sk_wrapper._model
 
