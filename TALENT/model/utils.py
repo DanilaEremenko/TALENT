@@ -703,7 +703,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         # except Exception as e:
         #     print(e)
         #     return 1e9 if info['task_type'] == 'regression' else 0.0
-        sys.stderr.write(f"{args.model_type} trial: {config['model']}\n")
+        sys.stderr.write(f"{args.model_type} {args.dataset} trial: {config['model']}\n")
         method.fit(train_val_data, info, train=True, config=config)
         return method.trlog['best_res']
 
