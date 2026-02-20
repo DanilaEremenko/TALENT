@@ -16,6 +16,7 @@ from typing import Optional
 from TALENT.model.lib.data import (
     Dataset
 )
+from catkernel.base_kernel import CkStateException
 from catkernel.catnn_ensemble_nw import CatKernelScikitNw
 from hyperparams.hp_ck import get_best_mname
 
@@ -122,6 +123,8 @@ class NWCKMethod(Method):
         else:
             self.model.double()
 
+        self.grad_exploded = False
+
     def fit(self, data, info, train=True, config=None):
         N, C, y = data
         # if the method already fit the dataset, skip these steps (such as the hyper-tune process)
@@ -147,8 +150,12 @@ class NWCKMethod(Method):
         time_cost = 0
         for epoch in range(self.args.max_epoch):
             tic = time.time()
-            self.train_epoch(epoch)
-            self.validate(epoch)
+            try:
+                self.train_epoch(epoch)
+                self.validate(epoch)
+            except CkStateException:
+                self.grad_exploded = True
+                break
             elapsed = time.time() - tic
             time_cost += elapsed
             print(f'Epoch: {epoch}, Time cost: {elapsed}')
