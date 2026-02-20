@@ -157,7 +157,7 @@ class NwMethod(Method):
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
 
-                X = torch.concat([x for x in X if X is not None], dim=1)
+                X = X if isinstance(X, torch.Tensor) else torch.concat([x for x in X if X is not None], dim=1)
 
                 if self.args.use_float:
                     X = X.float()
