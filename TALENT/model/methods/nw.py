@@ -233,9 +233,6 @@ class NwMethod(Method):
             for optimizer in self.optimizers:
                 optimizer.step()
 
-            if (i - 1) % 50 == 0 or i == len(self.train_loader):
-                print('epoch {}, train {}/{}, loss={:.4f} lr={:.4g}'.format(
-                    epoch, i, len(self.train_loader), loss.item(), self.optimizer.param_groups[0]['lr']))
             del loss
             i += 1
 
