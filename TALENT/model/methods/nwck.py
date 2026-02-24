@@ -70,7 +70,7 @@ class NWCKMethod(Method):
 
         from hyperparams import hp_ck
         problem_mode = 'reg' if self.D.is_regression else 'clf'
-        fit_y = problem_mode == 'reg'
+        fit_y = problem_mode == 'reg' and self.args.model_type not in ['nwck_wd_noy']
         meta_model = hp_ck.get_models_hparams(
             problem_mode=problem_mode,
             model_name=get_best_mname(fit_y=fit_y)
@@ -96,11 +96,20 @@ class NWCKMethod(Method):
             'normal_selector_l1': None
         }
         model_config['clust_model_params']['clust_model_fspace_weight_decay'] = 0
+        meta_common_params = {
+            'nn_background_lr': None,
+            'nn_background_weight_decay': None,
+            **meta_model.common_params
+        }
+        meta_common_params = {
+            key: val for key, val in meta_common_params.items()
+            if key not in model_config.keys()
+        }
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
             cat_ids=cat_ids,
-            **meta_model.common_params,
+            **meta_common_params,
             **common_params
             # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
         )
