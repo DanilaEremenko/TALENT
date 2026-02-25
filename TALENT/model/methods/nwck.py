@@ -105,7 +105,7 @@ class NWCKMethod(Method):
             key: val for key, val in meta_common_params.items()
             if key not in model_config.keys()
         }
-        if 'pen_k_ens_preds_corr' in model_config.keys():
+        if 'pen_k_ens_preds_corr' in model_config.keys() and model_config['pen_k_ens_preds_corr'] is not None:
             meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
 
         self.model_sk_wrapper = CatKernelScikitNw(

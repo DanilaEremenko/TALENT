@@ -57,7 +57,7 @@
       ],
       "pen_k_ens_preds_corr": [
         "?loguniform",
-        0.0,
+        null,
         1.0E-5,
         10.0
       ]
