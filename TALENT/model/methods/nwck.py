@@ -12,7 +12,7 @@ import numpy as np
 from TALENT.model.utils import (
     Averager
 )
-from typing import Optional
+from typing import Optional, Any, Dict
 from TALENT.model.lib.data import (
     Dataset
 )
@@ -101,10 +101,13 @@ class NWCKMethod(Method):
             'nn_background_weight_decay': None,
             **meta_model.common_params
         }
-        meta_common_params = {
+        meta_common_params: Dict[str, Any] = {
             key: val for key, val in meta_common_params.items()
             if key not in model_config.keys()
         }
+        if 'pen_k_ens_preds_corr' in model_config.keys():
+            meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
+
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
@@ -239,17 +242,39 @@ class NWCKMethod(Method):
 
             X = torch.concat(x_l, dim=1)
 
-            y = self.y['train'][batch_idx]
+            y_batch = self.y['train'][batch_idx]
 
             if self.args.use_float:
                 X = X.float()
 
-            pred = self.model(
-                X=X,
-                indices=batch_idx
-            ).squeeze(-1)
+            # y_pred = self.model(
+            #     X=X,
+            #     indices=batch_idx
+            # ).squeeze(-1)
 
-            loss = self.criterion(pred, y)
+            y_pred, y_preds, \
+                y_pred_indep, y_preds_indep, \
+                x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
+                x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
+                cl_T_B_probs, \
+                p_matrix_act, weights_norm_masked_indep, weights_norm_masked, report = (
+                self.model(
+                    X,
+                    return_cat_T=True,
+                    indices=batch_idx if self.model_sk_wrapper.lvo else None
+                ))
+
+            loss = self.criterion(y_pred, y_batch)
+
+            loss += self.model_sk_wrapper._add_losses(
+                y_preds=y_preds,
+                y_preds_indep=y_preds_indep,
+                y_true=y_batch,
+                cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
+                cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
+                cl_T_B_probs=cl_T_B_probs,
+                weights_norm_masked_indep=weights_norm_masked_indep
+            )
 
             tl.add(loss.item())
             for optimizer in self.optimizers:
