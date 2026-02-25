@@ -264,6 +264,9 @@ class NWCKMethod(Method):
                     indices=batch_idx if self.model_sk_wrapper.lvo else None
                 ))
 
+            if self.model_sk_wrapper.problem_mode == 'reg':
+                y_pred = y_pred.squeeze(1)
+
             loss = self.criterion(y_pred, y_batch)
 
             loss += self.model_sk_wrapper._add_losses(
