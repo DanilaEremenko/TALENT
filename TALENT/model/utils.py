@@ -379,11 +379,18 @@ def get_deep_args():
 
                                  'nwck',
                                  'nwck_wd',
+                                 'nwck_wd_stub',
                                  'nwck_wd_adam',
                                  'nwck_wd_noy',
                                  'nwck_wd_oycorr',
                                  'nwck_wd_ycorr',
 
+                                 'nwck_wd_wd_range',
+                                 'nwck_wd_wd_lr_range',
+                                 'nwck_wd_wd_lr_range_ycorr',
+                                 'nwck_wd_wd_lr_range_oycorr',
+                                 'nwck_wd_wd_lr_range_ycorr_range',
+                                 'nwck_wd_wd_lr_range_oycorr_range'
                                  ])
 
     # optimization parameters
@@ -926,16 +933,23 @@ def get_method(model):
     elif model == 'limix':
         from TALENT.model.methods.limix import LimiXMethod
         return LimiXMethod
-    elif model=='nw':
+    elif model == 'nw':
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
     elif model in [
         'nwck',
         'nwck_wd',
+        'nwck_wd_stub',
         'nwck_wd_adam',
         'nwck_wd_noy',
         'nwck_wd_oycorr',
-        'nwck_wd_ycorr'
+        'nwck_wd_ycorr',
+        'nwck_wd_wd_range',
+        'nwck_wd_wd_lr_range',
+        'nwck_wd_wd_lr_range_ycorr',
+        'nwck_wd_wd_lr_range_oycorr',
+        'nwck_wd_wd_lr_range_ycorr_range',
+        'nwck_wd_wd_lr_range_oycorr_range'
     ]:
         from TALENT.model.methods.nwck import NWCKMethod
         return NWCKMethod
