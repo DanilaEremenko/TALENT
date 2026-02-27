@@ -387,6 +387,8 @@ def get_deep_args():
 
                                  'nwck_wd_wd_range',
                                  'nwck_wd_wd_lr_range',
+                                 'nwck_wd_wd_lr_range_sched_exp',
+                                 'nwck_wd_wd_lr_range_sched_flat-cos',
                                  'nwck_wd_wd_lr_range_ycorr',
                                  'nwck_wd_wd_lr_range_oycorr',
                                  'nwck_wd_wd_lr_range_ycorr_range',
@@ -946,6 +948,8 @@ def get_method(model):
         'nwck_wd_ycorr',
         'nwck_wd_wd_range',
         'nwck_wd_wd_lr_range',
+        'nwck_wd_wd_lr_range_sched_exp',
+        'nwck_wd_wd_lr_range_sched_flat-cos',
         'nwck_wd_wd_lr_range_ycorr',
         'nwck_wd_wd_lr_range_oycorr',
         'nwck_wd_wd_lr_range_ycorr_range',

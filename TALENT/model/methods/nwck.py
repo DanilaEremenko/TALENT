@@ -77,6 +77,19 @@ class NWCKMethod(Method):
         )
         if 'kernel_fit_background' in model_config:
             del meta_model.common_params['kernel_fit_background']
+
+        if 'scheduler_params' in model_config.keys():
+            if 'gamma' in model_config['scheduler_params']:
+                meta_model.common_params['scheduler_mode'] = 'exp'
+            elif 'flat_ratio' in model_config['scheduler_params']:
+                meta_model.common_params['scheduler_mode'] = 'flat-cos'
+                flat_ratio = model_config['scheduler_params'].pop('flat_ratio')
+                scheduler_params = model_config['scheduler_params']
+                scheduler_params['T_flat'] = int(self.args.max_epoch * flat_ratio)
+                scheduler_params['T_cosine'] = self.args.max_epoch - scheduler_params['T_flat']
+            else:
+                raise ValueError(model_config['scheduler_params'])
+
         common_params = {
             'hard_M_lr': None,
             'hard_M_conn_lr': None,
@@ -287,8 +300,16 @@ class NWCKMethod(Method):
             for optimizer in self.optimizers:
                 optimizer.step()
 
+            for scheduler in self.schedulers:
+                if isinstance(scheduler, torch.optim.lr_scheduler.OneCycleLR):
+                    scheduler.step()
+
             del loss
             i += 1
+
+        for scheduler in self.schedulers:
+            if not isinstance(scheduler, torch.optim.lr_scheduler.OneCycleLR):
+                scheduler.step()
 
         tl = tl.item()
         self.trlog['train_loss'].append(tl)
