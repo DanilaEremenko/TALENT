@@ -385,6 +385,8 @@ def get_deep_args():
                                  'nwck_wd_oycorr',
                                  'nwck_wd_ycorr',
 
+                                 'nwck_wd_lr_range',
+                                 'nwck_wd_lr_range_fspace',
                                  'nwck_wd_wd_range',
                                  'nwck_wd_wd_lr_range',
                                  'nwck_wd_wd_lr_range_sched_exp',
@@ -953,7 +955,9 @@ def get_method(model):
         'nwck_wd_wd_lr_range_ycorr',
         'nwck_wd_wd_lr_range_oycorr',
         'nwck_wd_wd_lr_range_ycorr_range',
-        'nwck_wd_wd_lr_range_oycorr_range'
+        'nwck_wd_wd_lr_range_oycorr_range',
+        'nwck_wd_lr_range',
+        'nwck_wd_lr_range_fspace'
     ]:
         from TALENT.model.methods.nwck import NWCKMethod
         return NWCKMethod
