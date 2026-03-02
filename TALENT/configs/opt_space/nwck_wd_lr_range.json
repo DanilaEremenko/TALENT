@@ -1,5 +1,5 @@
 {
-  "nwck_wd": {
+  "nwck_wd_lr_range": {
     "model": {
       "nn_n_layers": [
         "int",
@@ -15,18 +15,18 @@
         "clust_model_lr": [
           "loguniform",
           1e-5,
-          1e0
+          1e-1
         ],
         "clust_model_weight_decay": [
           "?loguniform",
           0.0,
           1e-5,
-          1e1
+          1e-2
         ],
         "clust_model_fspace_lr": [
           "loguniform",
           1e-5,
-          1e0
+          1e-1
         ]
       },
       "nn_dropout": [
@@ -42,18 +42,18 @@
       "nn_background_lr": [
         "loguniform",
         1e-5,
-        1e0
+        1e-1
       ],
       "nn_background_weight_decay": [
         "?loguniform",
         0.0,
         1e-5,
-        1e1
+        1e-2
       ],
       "nn_lr": [
         "loguniform",
         1e-5,
-        1e0
+        1e-1
       ]
     },
     "training": {
