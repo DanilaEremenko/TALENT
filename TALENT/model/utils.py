@@ -743,7 +743,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         else:
             direction = 'maximize'
 
-        set_seeds(args.seed)
+        # set_seeds(args.seed)
         method = get_method(args.model_type)(args, info['task_type'] == 'regression')
 
         trial_configs = []
