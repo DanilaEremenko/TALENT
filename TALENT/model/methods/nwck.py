@@ -125,6 +125,10 @@ class NWCKMethod(Method):
             meta_common_params['neigh_clusters'] = 'isol_nn_add_fast'
         elif self.args.model_type == 'nwck_wd_neigh_nn_mult':
             meta_common_params['neigh_clusters'] = 'isol_nn_mult_fast'
+        elif self.args.model_type == 'nwck_wd_fmask_only_sigma':
+            meta_common_params['clust_fspace'] = 'gumbel_inters_only_sigma'
+        elif self.args.model_type == 'nwck_wd_fmask_no':
+            meta_common_params['clust_fspace'] = 'all'
 
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,

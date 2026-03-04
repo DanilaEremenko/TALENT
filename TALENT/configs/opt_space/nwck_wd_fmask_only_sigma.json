@@ -1,5 +1,5 @@
 {
-  "nwck_wd_fmask_only_features": {
+  "nwck_wd_fmask_only_sigma": {
     "model": {
       "nn_n_layers": [
         "int",

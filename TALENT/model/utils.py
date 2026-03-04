@@ -379,6 +379,8 @@ def get_deep_args():
 
                                  'nwck',
                                  'nwck_wd',
+                                 'nwck_wd_fmask_only_sigma',
+                                 'nwck_wd_fmask_no',
                                  'nwck_wd_neigh_nn_add',
                                  'nwck_wd_neigh_nn_mult',
                                  'nwck_wd_stub',
@@ -945,6 +947,8 @@ def get_method(model):
     elif model in [
         'nwck',
         'nwck_wd',
+        'nwck_wd_fmask_only_sigma',
+        'nwck_wd_fmask_no',
         'nwck_wd_neigh_nn_add',
         'nwck_wd_neigh_nn_mult',
         'nwck_wd_stub',
