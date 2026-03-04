@@ -379,6 +379,8 @@ def get_deep_args():
 
                                  'nwck',
                                  'nwck_wd',
+                                 'nwck_wd_neigh_nn_add',
+                                 'nwck_wd_neigh_nn_mult',
                                  'nwck_wd_stub',
                                  'nwck_wd_adam',
                                  'nwck_wd_noy',
@@ -765,7 +767,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'w') as fp:
             json.dump(args.config, fp, sort_keys=True, indent=4)
 
-        return args,study
+        return args, study
 
 
 def get_method(model):
@@ -943,6 +945,8 @@ def get_method(model):
     elif model in [
         'nwck',
         'nwck_wd',
+        'nwck_wd_neigh_nn_add',
+        'nwck_wd_neigh_nn_mult',
         'nwck_wd_stub',
         'nwck_wd_adam',
         'nwck_wd_noy',
