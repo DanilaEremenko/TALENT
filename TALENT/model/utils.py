@@ -379,6 +379,9 @@ def get_deep_args():
 
                                  'nwck',
                                  'nwck_wd',
+                                 'nwck_wd_nn_neurons',
+                                 'nwck_wd_nn_neurons_lin_nn',
+                                 'nwck_wd_nn_neurons_lin_nn_trick',
                                  'nwck_wd_fmask_only_sigma',
                                  'nwck_wd_fmask_no',
                                  'nwck_wd_neigh_nn_add',
@@ -947,6 +950,9 @@ def get_method(model):
     elif model in [
         'nwck',
         'nwck_wd',
+        'nwck_wd_nn_neurons',
+        'nwck_wd_nn_neurons_lin_nn',
+        'nwck_wd_nn_neurons_lin_nn_trick',
         'nwck_wd_fmask_only_sigma',
         'nwck_wd_fmask_no',
         'nwck_wd_neigh_nn_add',
