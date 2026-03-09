@@ -380,9 +380,10 @@ def get_deep_args():
                                  'nwck',
                                  'nwck_wd',
 
-                                 'nwck_wd_cl_params',
                                  'nwck_wd_nn_neurons_cl_params',
+                                 'nwck_wd_nn_neurons_cl_params_b_params',
                                  'nwck_wd_nn_neurons_lin_nn_cl_params',
+                                 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
 
                                  'nwck_wd_nn_neurons_mlp_mnca',
                                  'nwck_wd_nn_neurons_fmask_no_mlp_mnca',
@@ -962,9 +963,10 @@ def get_method(model):
         'nwck',
         'nwck_wd',
 
-        'nwck_wd_cl_params',
         'nwck_wd_nn_neurons_cl_params',
+        'nwck_wd_nn_neurons_cl_params_b_params',
         'nwck_wd_nn_neurons_lin_nn_cl_params',
+        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
 
         'nwck_wd_nn_neurons_mlp_mnca',
         'nwck_wd_nn_neurons_fmask_no_mlp_mnca',
