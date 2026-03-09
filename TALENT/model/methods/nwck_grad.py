@@ -17,8 +17,8 @@ from TALENT.model.lib.data import (
     Dataset
 )
 from catkernel.base_kernel import CkStateException
-from catkernel.catnn_ensemble_nw import CatKernelScikitNw
-from hyperparams.hp_ck import get_best_mname
+from catkernel.catnn_ensemble_nw_grad import CatKernelScikitNwGrad
+from hyperparams.hp_ck import get_best_mname_grad
 
 
 def make_random_batches(
@@ -37,7 +37,7 @@ def make_random_batches(
     return batches  # type: ignore[code]
 
 
-class NWCKMethod(Method):
+class NWCKGradMethod(Method):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
         assert (args.cat_policy == 'tabr_ohe')
@@ -73,7 +73,7 @@ class NWCKMethod(Method):
         fit_y = problem_mode == 'reg' and self.args.model_type not in ['nwck_wd_noy']
         meta_model = hp_ck.get_models_hparams(
             problem_mode=problem_mode,
-            model_name=get_best_mname(fit_y=fit_y)
+            model_name=get_best_mname_grad(fit_y=fit_y)
         )
         if 'kernel_fit_background' in model_config:
             del meta_model.common_params['kernel_fit_background']
@@ -134,7 +134,7 @@ class NWCKMethod(Method):
         if 'mlp_mnca' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_mnca'
 
-        self.model_sk_wrapper = CatKernelScikitNw(
+        self.model_sk_wrapper = CatKernelScikitNwGrad(
             **model_config,
             tmp_dir=None,
             cat_ids=cat_ids,
@@ -278,16 +278,10 @@ class NWCKMethod(Method):
             #     indices=batch_idx
             # ).squeeze(-1)
 
-            y_pred, y_preds, \
-                y_pred_indep, y_preds_indep, \
-                x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
-                x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
-                _, _, \
-                cl_T_B_probs, \
-                p_matrix_act, weights_norm_masked_indep, weights_norm_masked, report = (
+            y_pred = (
                 self.model(
                     X,
-                    return_cat_T=True,
+                    return_cat_T=False,
                     indices=batch_idx if self.model_sk_wrapper.lvo else None
                 ))
 
@@ -295,16 +289,6 @@ class NWCKMethod(Method):
                 y_pred = y_pred.squeeze(1)
 
             loss = self.criterion(y_pred, y_batch)
-
-            loss += self.model_sk_wrapper._add_losses(
-                y_preds=y_preds,
-                y_preds_indep=y_preds_indep,
-                y_true=y_batch,
-                cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
-                cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
-                cl_T_B_probs=cl_T_B_probs,
-                weights_norm_masked_indep=weights_norm_masked_indep
-            )
 
             tl.add(loss.item())
             for optimizer in self.optimizers:
