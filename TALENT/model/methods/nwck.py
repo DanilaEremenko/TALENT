@@ -284,7 +284,7 @@ class NWCKMethod(Method):
                 x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                 _, _, \
                 cl_T_B_probs, \
-                p_matrix_act, weights_norm_masked_indep, weights_norm_masked, report = (
+                p_matrix_act, weights_norm_masked_indep, weights_norm_masked = (
                 self.model(
                     X,
                     return_cat_T=True,
