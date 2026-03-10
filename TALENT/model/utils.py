@@ -365,57 +365,16 @@ def get_deep_args():
         default_args = json.load(f)
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str, default=default_args['model_type'],
-                        choices=['mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr',
-                                 'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos',
-                                 'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr',
-                                 'switchtab', 'bishop', 'protogate', 'realmlp', 'mlp_plr',
-                                 'excelformer', 'grande', 'amformer', 'trompt', 'tabm',
-                                 't2gformer', 'tabautopnpnet',
+                        choices=[
+                            'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
+                            'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
+                            'nwck_wd_nn_neurons_fmask_no', 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
+                            'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re', 'nwck_wd_nn_neurons_lin_nn_fmask_no',
+                            'nwck_wd_nn_neurons_lin_nn_trick', 'nwck_wd_re',
 
-                                 'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
-                                 'tabicl', 'mitra', 'limix',
-
-                                 'nw',
-
-                                 'nwck',
-                                 'nwck_wd',
-                                 'nwck_wd_grad',
-
-                                 'nwck_wd_nn_neurons_cl_params',
-                                 'nwck_wd_nn_neurons_cl_params_b_params',
-                                 'nwck_wd_nn_neurons_lin_nn_cl_params',
-                                 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
-
-                                 'nwck_wd_nn_neurons_mlp_mnca',
-                                 'nwck_wd_nn_neurons_fmask_no_mlp_mnca',
-
-                                 'nwck_wd_nn_neurons_fmask_no',
-                                 'nwck_wd_nn_neurons_lin_nn_fmask_no',
-
-                                 'nwck_wd_nn_neurons',
-                                 'nwck_wd_nn_neurons_lin_nn',
-                                 'nwck_wd_nn_neurons_lin_nn_trick',
-                                 'nwck_wd_fmask_only_sigma',
-                                 'nwck_wd_fmask_no',
-                                 'nwck_wd_neigh_nn_add',
-                                 'nwck_wd_neigh_nn_mult',
-                                 'nwck_wd_stub',
-                                 'nwck_wd_adam',
-                                 'nwck_wd_noy',
-                                 'nwck_wd_oycorr',
-                                 'nwck_wd_ycorr',
-
-                                 'nwck_wd_lr_range',
-                                 'nwck_wd_lr_range_fspace',
-                                 'nwck_wd_wd_range',
-                                 'nwck_wd_wd_lr_range',
-                                 'nwck_wd_wd_lr_range_sched_exp',
-                                 'nwck_wd_wd_lr_range_sched_flat-cos',
-                                 'nwck_wd_wd_lr_range_ycorr',
-                                 'nwck_wd_wd_lr_range_oycorr',
-                                 'nwck_wd_wd_lr_range_ycorr_range',
-                                 'nwck_wd_wd_lr_range_oycorr_range'
-                                 ])
+                            'nwck_wd_grad'
+                        ]
+                        )
 
     # optimization parameters
     parser.add_argument('--max_epoch', type=int, default=default_args['max_epoch'])
@@ -961,41 +920,11 @@ def get_method(model):
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
     elif model in [
-        'nwck',
-        'nwck_wd',
-
-        'nwck_wd_nn_neurons_cl_params',
-        'nwck_wd_nn_neurons_cl_params_b_params',
-        'nwck_wd_nn_neurons_lin_nn_cl_params',
-        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
-
-        'nwck_wd_nn_neurons_mlp_mnca',
-        'nwck_wd_nn_neurons_fmask_no_mlp_mnca',
-
-        'nwck_wd_nn_neurons_fmask_no',
-        'nwck_wd_nn_neurons_lin_nn_fmask_no',
-        'nwck_wd_nn_neurons',
-        'nwck_wd_nn_neurons_lin_nn',
-        'nwck_wd_nn_neurons_lin_nn_trick',
-        'nwck_wd_fmask_only_sigma',
-        'nwck_wd_fmask_no',
-        'nwck_wd_neigh_nn_add',
-        'nwck_wd_neigh_nn_mult',
-        'nwck_wd_stub',
-        'nwck_wd_adam',
-        'nwck_wd_noy',
-        'nwck_wd_oycorr',
-        'nwck_wd_ycorr',
-        'nwck_wd_wd_range',
-        'nwck_wd_wd_lr_range',
-        'nwck_wd_wd_lr_range_sched_exp',
-        'nwck_wd_wd_lr_range_sched_flat-cos',
-        'nwck_wd_wd_lr_range_ycorr',
-        'nwck_wd_wd_lr_range_oycorr',
-        'nwck_wd_wd_lr_range_ycorr_range',
-        'nwck_wd_wd_lr_range_oycorr_range',
-        'nwck_wd_lr_range',
-        'nwck_wd_lr_range_fspace'
+        'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
+        'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
+        'nwck_wd_nn_neurons_fmask_no', 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
+        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re', 'nwck_wd_nn_neurons_lin_nn_fmask_no',
+        'nwck_wd_nn_neurons_lin_nn_trick', 'nwck_wd_re'
     ]:
         from TALENT.model.methods.nwck import NWCKMethod
         return NWCKMethod
