@@ -39,6 +39,7 @@ class classical_methods(object, metaclass=abc.ABCMeta):
         if is_train:
             self.N, self.C, self.num_new_value, self.imputer, self.cat_new_value = data_nan_process(self.N, self.C, self.args.num_nan_policy, self.args.cat_nan_policy)
             self.y, self.y_info, self.label_encoder = data_label_process(self.y, self.is_regression)
+            self.y_info['policy'] = None
             self.n_bins = self.args.config['fit']['n_bins']
             self.N,self.num_encoder = num_enc_process(self.N,num_policy = self.args.num_policy, n_bins = self.n_bins,y_train=self.y['train'],is_regression=self.is_regression)
             self.N, self.C, self.ord_encoder, self.mode_values, self.cat_encoder = data_enc_process(self.N, self.C, self.args.cat_policy, self.y['train'])
