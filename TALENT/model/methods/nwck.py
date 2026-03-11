@@ -155,6 +155,8 @@ class NWCKMethod(Method):
             X=x_B, y=y_B
         )
         self.model = self.model_sk_wrapper._model
+        self.x_B = self.model.x_background
+        self.model.x_background = None
 
         if self.args.use_float:
             self.model.float()
@@ -228,6 +230,7 @@ class NWCKMethod(Method):
 
                 pred = self.model(
                     X=X,
+                    x_B=self.x_B,
                     indices=None,
                 ).squeeze(-1)
 
@@ -273,11 +276,6 @@ class NWCKMethod(Method):
             if self.args.use_float:
                 X = X.float()
 
-            # y_pred = self.model(
-            #     X=X,
-            #     indices=batch_idx
-            # ).squeeze(-1)
-
             y_pred, y_preds, \
                 y_pred_indep, y_preds_indep, \
                 x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
@@ -287,6 +285,7 @@ class NWCKMethod(Method):
                 p_matrix_act, weights_norm_masked_indep, weights_norm_masked = (
                 self.model(
                     X,
+                    x_B=self.x_B,
                     return_cat_T=True,
                     indices=batch_idx if self.model_sk_wrapper.lvo else None
                 ))
@@ -343,6 +342,7 @@ class NWCKMethod(Method):
                     X = X.float()
                 pred = self.model(
                     X=X,
+                    x_B=self.x_B,
                     indices=None,
                 ).squeeze(-1)
 

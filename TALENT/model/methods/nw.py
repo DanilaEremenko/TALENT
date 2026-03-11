@@ -100,6 +100,8 @@ class NwMethod(Method):
             X=x_B, y=y_B
         )
         self.model = self.model_sk_wrapper._model
+        self.x_B = self.model.x_background
+        self.model.x_background = None
 
         if self.args.use_float:
             self.model.float()
@@ -173,6 +175,7 @@ class NwMethod(Method):
 
                 pred = self.model(
                     X=X,
+                    x_B=self.x_B,
                     indices=None,
                 ).squeeze(-1)
 
@@ -220,7 +223,8 @@ class NwMethod(Method):
 
             pred = self.model(
                 X=X,
-                indices=batch_idx
+                x_B=self.x_B,
+                indices=batch_idx if self.model_sk_wrapper.lvo else None
             ).squeeze(-1)
 
             loss = self.criterion(pred, y)
@@ -254,6 +258,7 @@ class NwMethod(Method):
                     X = X.float()
                 pred = self.model(
                     X=X,
+                    x_B=self.x_B,
                     indices=None,
                 ).squeeze(-1)
 
