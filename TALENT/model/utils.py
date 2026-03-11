@@ -376,7 +376,7 @@ def get_deep_args():
                             'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
                             'tabicl', 'mitra', 'limix',
 
-                            'nw',
+                            'nw', 'nw_init_1000',
 
                             'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
                             'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
@@ -928,7 +928,7 @@ def get_method(model):
     elif model == 'limix':
         from TALENT.model.methods.limix import LimiXMethod
         return LimiXMethod
-    elif model == 'nw':
+    elif model in ['nw', 'nw_init_1000']:
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
     elif model in [

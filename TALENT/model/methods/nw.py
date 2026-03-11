@@ -78,8 +78,12 @@ class NwMethod(Method):
         common_params = {
             'act_fn': None,
             'dist_model_biases': False,
-            'n_layers': None
+            'n_layers': None,
+            'rbp_init_max': None
         }
+        if self.args.model_type == 'nw_init_1000':
+            common_params['rbp_init_max'] = 1000
+
         self.model_sk_wrapper = NWScikit(
             **model_config,
             tmp_dir=None,
