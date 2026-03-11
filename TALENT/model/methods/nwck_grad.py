@@ -121,11 +121,7 @@ class NWCKGradMethod(Method):
         if 'pen_k_ens_preds_corr' in model_config.keys() and model_config['pen_k_ens_preds_corr'] is not None:
             meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
 
-        if self.args.model_type == 'nwck_wd_neigh_nn_add':
-            meta_common_params['neigh_clusters'] = 'isol_nn_add_fast'
-        elif self.args.model_type == 'nwck_wd_neigh_nn_mult':
-            meta_common_params['neigh_clusters'] = 'isol_nn_mult_fast'
-        elif self.args.model_type == 'nwck_wd_fmask_only_sigma':
+        if self.args.model_type == 'nwck_wd_fmask_only_sigma':
             meta_common_params['clust_fspace'] = 'gumbel_inters_only_sigma'
 
         if 'fmask_no' in self.args.model_type:

@@ -378,10 +378,21 @@ def get_deep_args():
 
                             'nw', 'nw_init_1000',
 
-                            'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
-                            'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
-                            'nwck_wd_nn_neurons_fmask_no', 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
-                            'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re', 'nwck_wd_nn_neurons_lin_nn_fmask_no',
+                            'nwck', 'nwck_wd',
+
+                            'nwck_wd_fmask_no',
+                            'nwck_wd_fmask_only_sigma',
+                            'nwck_wd_nn_neurons_fmask_no',
+
+                            'nwck_wd_nn_neurons_cl_params_b_params',
+                            'nwck_wd_nn_neurons_cl_params_b_params_re',
+                            'nwck_wd_nn_neurons_cl_params_b_params_re_rbp',
+
+                            'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
+                            'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re',
+                            'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re_rbp',
+
+                            'nwck_wd_nn_neurons_lin_nn_fmask_no',
                             'nwck_wd_nn_neurons_lin_nn_trick', 'nwck_wd_re',
 
                             'nwck_wd_grad'
@@ -933,9 +944,19 @@ def get_method(model):
         return NwMethod
     elif model in [
         'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
-        'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
-        'nwck_wd_nn_neurons_fmask_no', 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
-        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re', 'nwck_wd_nn_neurons_lin_nn_fmask_no',
+
+        'nwck_wd_nn_neurons_cl_params_b_params',
+        'nwck_wd_nn_neurons_cl_params_b_params_re',
+        'nwck_wd_nn_neurons_cl_params_b_params_re_rbp',
+
+        'nwck_wd_nn_neurons_fmask_no',
+
+        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
+        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re',
+        'nwck_wd_nn_neurons_lin_nn_cl_params_b_params_re_rbp',
+
+        'nwck_wd_nn_neurons_lin_nn_fmask_no',
+
         'nwck_wd_nn_neurons_lin_nn_trick', 'nwck_wd_re'
     ]:
         from TALENT.model.methods.nwck import NWCKMethod
