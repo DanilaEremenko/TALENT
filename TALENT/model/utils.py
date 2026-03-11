@@ -366,6 +366,18 @@ def get_deep_args():
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str, default=default_args['model_type'],
                         choices=[
+                            'mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr',
+                            'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos',
+                            'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr',
+                            'switchtab', 'bishop', 'protogate', 'realmlp', 'mlp_plr',
+                            'excelformer', 'grande', 'amformer', 'trompt', 'tabm',
+                            't2gformer', 'tabautopnpnet',
+
+                            'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
+                            'tabicl', 'mitra', 'limix',
+
+                            'nw',
+
                             'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
                             'nwck_wd_nn_neurons_cl_params_b_params', 'nwck_wd_nn_neurons_cl_params_b_params_re',
                             'nwck_wd_nn_neurons_fmask_no', 'nwck_wd_nn_neurons_lin_nn_cl_params_b_params',
