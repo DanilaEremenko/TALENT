@@ -107,7 +107,8 @@ class NWCKMethod(Method):
             'num_embeddings': None,
             'normal_selector_lr': None,
             'normal_selector_l1': None,
-            'optimized_cdist': 'cdist' in self.args.model_type
+            'optimized_cdist': True,
+            'optimized_mm': True
         }
         model_config['clust_model_params']['clust_model_fspace_weight_decay'] = 0
         meta_common_params = {
