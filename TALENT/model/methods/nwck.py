@@ -123,6 +123,12 @@ class NWCKMethod(Method):
         if 'pen_k_ens_preds_corr' in model_config.keys() and model_config['pen_k_ens_preds_corr'] is not None:
             meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
 
+        if 'init_max_3000' in self.args.model_type:
+            meta_common_params['rbp_init_max'] = 3000
+        elif 'init_max_5000' in self.args.model_type:
+            meta_common_params['rbp_init_max'] = 5000
+        elif 'init_max_no' in self.args.model_type:
+            meta_common_params['rbp_init_max'] = None
         if self.args.model_type == 'nwck_wd_fmask_only_sigma':
             meta_common_params['clust_fspace'] = 'gumbel_inters_only_sigma'
 
