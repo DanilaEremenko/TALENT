@@ -170,6 +170,7 @@ class Method(object, metaclass=abc.ABCMeta):
             print(f'Epoch: {epoch}, Time cost: {elapsed}')
             if not self.continue_training:
                 break
+        self.last_epoch = epoch
         torch.save(
             dict(params=self.model.state_dict()),
             osp.join(self.args.save_path, 'epoch-last-{}.pth'.format(str(self.args.seed)))

@@ -57,17 +57,17 @@ class ModernNCAMethod(Method):
             self.model.float()
         else:
             self.model.double()
-    
-    
+
+
     def data_format(self, is_train = True, N = None, C = None, y = None):
         if is_train:
             self.N, self.C, self.num_new_value, self.imputer, self.cat_new_value = data_nan_process(self.N, self.C, self.args.num_nan_policy, self.args.cat_nan_policy)
             self.y, self.y_info, self.label_encoder = data_label_process(self.y, self.is_regression)
             self.N, self.C, self.ord_encoder, self.mode_values, self.cat_encoder = data_enc_process(self.N, self.C, self.args.cat_policy)
             self.n_num_features = self.N['train'].shape[1] if self.N is not None else 0
-            self.n_cat_features = self.C['train'].shape[1] if self.C is not None else 0      
+            self.n_cat_features = self.C['train'].shape[1] if self.C is not None else 0
             self.N, self.normalizer = data_norm_process(self.N, self.args.normalization, self.args.seed)
-            
+
             if self.is_regression:
                 self.d_out = 1
             else:
@@ -98,14 +98,14 @@ class ModernNCAMethod(Method):
             self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
             self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
             self.n_num_features, self.n_cat_features = self.D.n_num_features, self.D.n_cat_features
-            
+
             self.data_format(is_train = True)
         if config is not None:
             self.reset_stats_withconfig(config)
         self.construct_model()
         self.optimizer = torch.optim.AdamW(
-            self.model.parameters(), 
-            lr = self.args.config['training']['lr'], 
+            self.model.parameters(),
+            lr = self.args.config['training']['lr'],
             weight_decay = self.args.config['training']['weight_decay']
         )
         self.train_size = self.N['train'].shape[0] if self.N is not None else self.C['train'].shape[0]
@@ -113,7 +113,7 @@ class ModernNCAMethod(Method):
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
         if not train:
             return
-        
+
         time_cost = 0
         for epoch in range(self.args.max_epoch):
             tic = time.time()
@@ -124,6 +124,7 @@ class ModernNCAMethod(Method):
             print(f'Epoch: {epoch}, Time cost: {elapsed}')
             if not self.continue_training:
                 break
+        self.last_epoch = epoch
         torch.save(
             dict(params=self.model.state_dict()),
             osp.join(self.args.save_path, 'epoch-last-{}.pth'.format(str(self.args.seed)))
@@ -137,9 +138,9 @@ class ModernNCAMethod(Method):
         print('best epoch {}, best val res={:.4f}'.format(self.trlog['best_epoch'], self.trlog['best_res']))
         ## Evaluation Stage
         self.model.eval()
-        
+
         self.data_format(False, N, C, y)
-        
+
         test_logit, test_label = [], []
 
         tic = time.time()
@@ -152,11 +153,11 @@ class ModernNCAMethod(Method):
                     X_num, X_cat = None, X
                 else:
                     X_num, X_cat = X, None
-                
+
                 candidate_x_num = self.N['train'] if self.N is not None else None
                 candidate_x_cat = self.C['train'] if self.C is not None else None
                 candidate_y = self.y['train']
-                
+
                 if self.args.use_float:
                     X_num = X_num.float() if X_num is not None else None
                     X_cat = X_cat.float() if X_cat is not None else None
@@ -164,14 +165,14 @@ class ModernNCAMethod(Method):
                     candidate_x_cat = candidate_x_cat.float() if candidate_x_cat is not None else None
                     if self.is_regression:
                         candidate_y = candidate_y.float()
-                
+
                 if X_cat is None and X_num is not None:
                     x, candidate_x = X_num, candidate_x_num
                 elif X_cat is not None and X_num is None:
                     x, candidate_x = X_cat, candidate_x_cat
                 else:
                     x, candidate_x = torch.cat([X_num, X_cat], dim=1), torch.cat([candidate_x_num, candidate_x_cat], dim=1)
-                
+
                 pred = self.model(
                     x = x,
                     y = None,
@@ -179,7 +180,7 @@ class ModernNCAMethod(Method):
                     candidate_y = candidate_y,
                     is_train = False,
                 ).squeeze(-1)
-                
+
                 test_logit.append(pred)
                 test_label.append(y)
 
@@ -187,8 +188,8 @@ class ModernNCAMethod(Method):
 
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
-        
-        vl = self.criterion(test_logit, test_label).item()     
+
+        vl = self.criterion(test_logit, test_label).item()
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
         # FIX: Denormalize regression predictions
@@ -198,7 +199,7 @@ class ModernNCAMethod(Method):
         print('Test: loss={:.4f}'.format(vl))
         for name, res in zip(metric_name, vres):
             print('[{}]={:.4f}'.format(name, res))
-        
+
         return vl, vres, metric_name, test_logit
 
 
@@ -208,7 +209,7 @@ class ModernNCAMethod(Method):
         i = 0
         for batch_idx in make_random_batches(self.train_size, self.args.batch_size, self.args.device):
             self.train_step = self.train_step + 1
-            
+
             X_num = self.N['train'][batch_idx] if self.N is not None else None
             X_cat = self.C['train'][batch_idx] if self.C is not None else None
             y = self.y['train'][batch_idx]
@@ -233,7 +234,7 @@ class ModernNCAMethod(Method):
                 x,candidate_x = X_cat,candidate_x_cat
             else:
                 x,candidate_x = torch.cat([X_num, X_cat], dim=1),torch.cat([candidate_x_num, candidate_x_cat], dim=1)
-            
+
             pred = self.model(
                 x = x,
                 y = y,
@@ -241,9 +242,9 @@ class ModernNCAMethod(Method):
                 candidate_y = candidate_y,
                 is_train = True,
             ).squeeze(-1)
-            
+
             loss = self.criterion(pred, y)
-            
+
             tl.add(loss.item())
             self.optimizer.zero_grad()
             loss.backward()
@@ -256,14 +257,14 @@ class ModernNCAMethod(Method):
             i += 1
 
         tl = tl.item()
-        self.trlog['train_loss'].append(tl)    
+        self.trlog['train_loss'].append(tl)
 
 
     def validate(self, epoch):
         print('best epoch {}, best val res={:.4f}'.format(
-            self.trlog['best_epoch'], 
+            self.trlog['best_epoch'],
             self.trlog['best_res']))
-        
+
         ## Evaluation Stage
         self.model.eval()
         test_logit, test_label = [], []
@@ -275,7 +276,7 @@ class ModernNCAMethod(Method):
                     X_num, X_cat = None, X
                 else:
                     X_num, X_cat = X, None
-                
+
                 candidate_x_num = self.N['train'] if self.N is not None else None
                 candidate_x_cat = self.C['train'] if self.C is not None else None
                 candidate_y = self.y['train']
@@ -300,13 +301,13 @@ class ModernNCAMethod(Method):
                     candidate_y = candidate_y,
                     is_train = False,
                 ).squeeze(-1)
-                
+
                 test_logit.append(pred)
                 test_label.append(y)
-                
+
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
-        
+
         vl = self.criterion(test_logit, test_label).item()
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
