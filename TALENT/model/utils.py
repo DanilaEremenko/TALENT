@@ -737,6 +737,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         #     return 1e9 if info['task_type'] == 'regression' else 0.0
         sys.stderr.write(f"{args.model_type} {args.dataset} trial: {config['model']}\n")
         method.fit(train_val_data, info, train=True, config=config)
+        assert method.trlog['best_res'] is not None
         return method.trlog['best_res']
 
     if osp.exists(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))) and args.retune == False:

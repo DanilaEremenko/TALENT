@@ -192,6 +192,8 @@ class NWCKMethod(Method):
             return
 
         time_cost = 0
+        self.validate(0)
+        self.val_count = 0
         for epoch in range(self.args.max_epoch):
             tic = time.time()
             try:
@@ -333,9 +335,9 @@ class NWCKMethod(Method):
         self.trlog['train_loss'].append(tl)
 
     def validate(self, epoch):
-        print('best epoch {}, best val res={:.4f}'.format(
-            self.trlog['best_epoch'],
-            self.trlog['best_res']))
+        # print('best epoch {}, best val res={:.4f}'.format(
+        #     self.trlog['best_epoch'],
+        #     self.trlog['best_res']))
 
         ## Evaluation Stage
         self.model.eval()
@@ -368,7 +370,7 @@ class NWCKMethod(Method):
             measure = np.greater_equal
 
         print('epoch {}, val, loss={:.4f} {} result={:.4f}'.format(epoch, vl, task_type, vres[0]))
-        if measure(vres[0], self.trlog['best_res']) or epoch == 0:
+        if self.trlog['best_res'] is None or measure(vres[0], self.trlog['best_res']) or epoch == 0:
             # sys.stderr.write(f'trial upd metric {dict(zip(metric_name, vres, strict=True))["RMSE"]}')
             self.trlog['best_res'] = vres[0]
             self.trlog['best_epoch'] = epoch
