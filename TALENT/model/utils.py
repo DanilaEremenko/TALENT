@@ -956,6 +956,7 @@ def get_method(model):
         'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
 
         'nwck_wd_nn_neurons_cl_params_b_params',
+        'nwck_wd_nn_neurons_cl_params_b_params_fmask_no',
         'nwck_wd_nn_neurons_cl_params_b_params_re',
         'nwck_wd_nn_neurons_cl_params_b_params_re_cdist',
         'nwck_wd_nn_neurons_cl_params_b_params_re_rbp',
