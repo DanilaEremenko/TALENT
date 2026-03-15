@@ -27,11 +27,6 @@
           0.0,
           1e-5,
           1e-1
-        ],
-        "clust_model_fspace_lr": [
-          "loguniform",
-          1e-5,
-          1e0
         ]
       },
       "nn_dropout": [
