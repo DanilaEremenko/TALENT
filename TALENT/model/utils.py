@@ -385,6 +385,7 @@ def get_deep_args():
                             'nwck_wd_nn_neurons_fmask_no',
 
                             'nwck_wd_nn_neurons_cl_params_b_params',
+                            'nwck_wd_nn_neurons_cl_params_b_params_fmask_no',
                             'nwck_wd_nn_neurons_cl_params_b_params_re',
                             'nwck_wd_nn_neurons_cl_params_b_params_re_cdist',
                             'nwck_wd_nn_neurons_cl_params_b_params_re_rbp',
@@ -408,7 +409,6 @@ def get_deep_args():
                             'nwck_wd_grad'
                         ]
                         )
-
     # optimization parameters
     parser.add_argument('--max_epoch', type=int, default=default_args['max_epoch'])
     parser.add_argument('--batch_size', type=int, default=default_args['batch_size'])

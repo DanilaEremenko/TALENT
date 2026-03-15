@@ -1,5 +1,5 @@
 {
-  "nwck_wd_nn_neurons_lin_nn_cl_params_b_params": {
+  "nwck_wd_nn_neurons_lin_nn_cl_params_b_params_fmask_no": {
     "model": {
       "nn_n_layers": [
         "?int",
