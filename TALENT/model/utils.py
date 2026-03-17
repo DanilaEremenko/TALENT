@@ -967,6 +967,7 @@ def get_method(model):
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_init_max_3000',
+        'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_narrow_range',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range',
