@@ -103,8 +103,8 @@ class NwMethod(Method):
             X=x_B, y=y_B
         )
         self.model = self.model_sk_wrapper._model
-        self.x_B = self.model.x_background
-        self.model.x_background = None
+        self.x_B = self.model.x_B
+        self.model.x_B = None
 
         if self.args.use_float:
             self.model.float()
