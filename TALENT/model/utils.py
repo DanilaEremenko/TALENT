@@ -394,6 +394,8 @@ def get_deep_args():
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mh',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mnn',
+                            'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lnn1',
+                            'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lnn2',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mnn_mh',
 
                             'nwck_wd_nn_neurons_cl_params_b_params_re',
@@ -976,6 +978,8 @@ def get_method(model):
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mh',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mnn',
+        'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lnn1',
+        'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lnn2',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_mnn_mh',
         'nwck_wd_nn_neurons_cl_params_b_params_re',
         'nwck_wd_nn_neurons_cl_params_b_params_re_cdist',
