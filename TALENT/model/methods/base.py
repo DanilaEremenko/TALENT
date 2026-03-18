@@ -61,11 +61,10 @@ class Method(object, metaclass=abc.ABCMeta):
         self.trlog['args'] = vars(args)
         self.trlog['train_loss'] = []
         self.trlog['best_epoch'] = 0
-        # if self.is_regression:
-        #     self.trlog['best_res'] = 1e10
-        # else:
-        #     self.trlog['best_res'] = 0
-        self.trlog['best_res'] = None
+        if self.is_regression:
+            self.trlog['best_res'] = 1e10
+        else:
+            self.trlog['best_res'] = 0
 
         self.args.device = get_device()
 
@@ -88,11 +87,10 @@ class Method(object, metaclass=abc.ABCMeta):
         self.trlog['args'] = vars(self.args)
         self.trlog['train_loss'] = []
         self.trlog['best_epoch'] = 0
-        # if self.is_regression:
-        #     self.trlog['best_res'] = 1e10
-        # else:
-        #     self.trlog['best_res'] = 0
-        self.trlog['best_res'] = None
+        if self.is_regression:
+            self.trlog['best_res'] = 1e10
+        else:
+            self.trlog['best_res'] = 0
 
 
     def data_format(self, is_train = True, N = None, C = None, y = None):
