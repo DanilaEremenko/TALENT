@@ -135,6 +135,9 @@ class NWCKMethod(Method):
         if 'fmask_no' in self.args.model_type:
             meta_common_params['clust_fspace'] = 'all'
 
+        if 'lapl' in self.args.model_type:
+            meta_common_params['kernel_mode'] = 'lapl'
+
         if 'mlp_mnca' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_mnca'
 

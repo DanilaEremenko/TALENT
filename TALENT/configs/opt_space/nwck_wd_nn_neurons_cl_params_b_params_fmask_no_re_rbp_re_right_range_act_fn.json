@@ -1,0 +1,76 @@
+{
+  "nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn": {
+    "model": {
+      "nn_act_fn": [
+        "categorical",
+        [
+          "selu",
+          "gelu",
+          "relu"
+        ]
+      ],
+      "rbp_init_max": [
+        "int",
+        1500,
+        5000
+      ],
+      "nn_n_layers": [
+        "int",
+        2,
+        3
+      ],
+      "nn_n_neurons": [
+        "int",
+        32,
+        512
+      ],
+      "cat_n_clusters": [
+        "int",
+        6,
+        32
+      ],
+      "clust_model_params": {
+        "clust_model_lr": [
+          "loguniform",
+          1e-5,
+          1e-1
+        ],
+        "clust_model_weight_decay": [
+          "?loguniform",
+          0.0,
+          1e-6,
+          1e-3
+        ]
+      },
+      "nn_dropout": [
+        "uniform",
+        0.0,
+        0.5
+      ],
+      "nn_adamw_b2": [
+        "loguniform",
+        0.85,
+        0.99
+      ],
+      "nn_background_lr": [
+        "loguniform",
+        1e-5,
+        1e-2
+      ],
+      "nn_background_weight_decay": [
+        "?loguniform",
+        0.0,
+        1e-6,
+        1e-4
+      ],
+      "nn_lr": [
+        "loguniform",
+        1e-5,
+        1e-1
+      ]
+    },
+    "training": {
+    },
+    "general": {}
+  }
+}
