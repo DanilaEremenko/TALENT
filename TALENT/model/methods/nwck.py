@@ -147,6 +147,9 @@ class NWCKMethod(Method):
         if 'act_fn_relu' in self.args.model_type:
             meta_common_params['nn_act_fn'] = 'relu'
 
+        if 'act_fn_gelu' in self.args.model_type:
+            meta_common_params['nn_act_fn'] = 'gelu'
+
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
