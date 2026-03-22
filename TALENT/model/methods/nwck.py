@@ -144,6 +144,9 @@ class NWCKMethod(Method):
         if 'mlp_upd' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_upd'
 
+        if 'act_fn_relu' in self.args.model_type:
+            meta_common_params['nn_act_fn'] = 'relu'
+
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
