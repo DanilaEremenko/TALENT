@@ -150,6 +150,19 @@ class NWCKMethod(Method):
         if 'act_fn_gelu' in self.args.model_type:
             meta_common_params['nn_act_fn'] = 'gelu'
 
+        if 'ifo' in self.args.model_type:
+            meta_common_params['neigh_clusters'] = 'isol_fast_order'
+
+        if 'pen_indep_mean' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'mean'
+        if 'pen_indep_best' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'best'
+        if 'pen_indep_worst' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'worst'
+
+        if 'detach_fi' in self.args.model_type:
+            meta_common_params['detach_fi'] = True
+
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
@@ -321,7 +334,8 @@ class NWCKMethod(Method):
                 cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
                 cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
                 cl_T_B_probs=cl_T_B_probs,
-                weights_norm_masked_indep=weights_norm_masked_indep
+                weights_norm_masked_indep=weights_norm_masked_indep,
+                criterion=self.criterion
             )
 
             tl.add(loss.item())

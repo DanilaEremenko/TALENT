@@ -379,6 +379,14 @@ def get_deep_args():
                             'nw', 'nw_init_1000',
 
                             'nwck', 'nwck_wd',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_best',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_best_detach_fi',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_detach_fi',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_worst',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_worst_detach_fi',
 
                             'nwck_wd_fmask_no',
                             'nwck_wd_fmask_only_sigma',
@@ -394,6 +402,7 @@ def get_deep_args():
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_relu',
+                            'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_relu_ifo',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_gelu',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lapl',
                             'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_kernel_mode',
@@ -975,7 +984,18 @@ def get_method(model):
         from TALENT.model.methods.nw import NwMethod
         return NwMethod
     elif model in [
-        'nwck', 'nwck_wd', 'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
+        'nwck', 'nwck_wd',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_best',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_best_detach_fi',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_detach_fi',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_worst',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_worst_detach_fi',
+
+        'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
 
         'nwck_wd_nn_neurons_cl_params_b_params',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no',
@@ -987,6 +1007,7 @@ def get_method(model):
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_relu',
+        'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_relu_ifo',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_act_fn_gelu',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_lapl',
         'nwck_wd_nn_neurons_cl_params_b_params_fmask_no_re_rbp_re_right_range_kernel_mode',
