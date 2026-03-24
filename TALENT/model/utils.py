@@ -379,6 +379,10 @@ def get_deep_args():
                             'nw', 'nw_init_1000',
 
                             'nwck', 'nwck_wd',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
+
                             'nwck_wd_rerere_fmask_no_act_fn_relu',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_best',
@@ -985,6 +989,9 @@ def get_method(model):
         return NwMethod
     elif model in [
         'nwck', 'nwck_wd',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',

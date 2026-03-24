@@ -37,6 +37,10 @@ def make_random_batches(
     return batches  # type: ignore[code]
 
 
+def stub_epoch_lamda(**kwargs):
+    return None
+
+
 class NWCKMethod(Method):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -46,6 +50,8 @@ class NWCKMethod(Method):
     def construct_model(self, model_config=None):
         if model_config is None:
             model_config = self.args.config['model']
+
+        self.epoch_lamda = stub_epoch_lamda if not hasattr(self, 'epoch_lamda') else self.epoch_lamda
 
         x_B_l = []
         if self.N is not None:
@@ -162,6 +168,9 @@ class NWCKMethod(Method):
 
         if 'detach_fi' in self.args.model_type:
             meta_common_params['detach_fi'] = True
+
+        if 'n_cl_3' in self.args.model_type:
+            meta_common_params['cat_n_clusters'] = 3
 
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
@@ -321,6 +330,21 @@ class NWCKMethod(Method):
                     return_cat_T=True,
                     indices=batch_idx if self.model_sk_wrapper.lvo else None
                 ))
+
+            self.epoch_lamda(
+                X=X,
+
+                x_T_f=x_T_f,
+                x_B_f=x_B_f,
+
+                x_T_c=x_T_c,
+                x_B_c=x_B_c,
+
+                cl_T_probs=cl_T_probs,
+                cl_B_probs=cl_B_probs,
+
+                cl_T_B_probs=cl_T_B_probs
+            )
 
             if self.model_sk_wrapper.problem_mode == 'reg':
                 y_pred = y_pred.squeeze(1)
