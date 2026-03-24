@@ -300,7 +300,9 @@ class NWCKMethod(Method):
         self.model.train()
         tl = Averager()
         i = 0
-        for batch_idx in make_random_batches(self.train_size, self.args.batch_size, self.args.device):
+        for batch_i, batch_idx in enumerate(
+                make_random_batches(self.train_size, self.args.batch_size, self.args.device)
+        ):
             self.train_step = self.train_step + 1
 
             x_l = []
@@ -343,7 +345,10 @@ class NWCKMethod(Method):
                 cl_T_probs=cl_T_probs,
                 cl_B_probs=cl_B_probs,
 
-                cl_T_B_probs=cl_T_B_probs
+                cl_T_B_probs=cl_T_B_probs,
+
+                epoch=epoch,
+                batch_i=batch_i
             )
 
             if self.model_sk_wrapper.problem_mode == 'reg':
