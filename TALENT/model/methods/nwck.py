@@ -159,6 +159,9 @@ class NWCKMethod(Method):
         if 'ifo' in self.args.model_type:
             meta_common_params['neigh_clusters'] = 'isol_fast_order'
 
+        if 'ift' in self.args.model_type:
+            meta_common_params['neigh_clusters'] = 'isol_fast_T_cl'
+
         if 'pen_indep_mean' in self.args.model_type:
             meta_common_params['pen_indep_preds_mode'] = 'mean'
         if 'pen_indep_best' in self.args.model_type:
