@@ -150,6 +150,9 @@ class NWCKMethod(Method):
         if 'mlp_upd' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_upd'
 
+        if 'mlp_2' in self.args.model_type:
+            meta_common_params['clust_model'] = 'mlp_2'
+
         if 'act_fn_relu' in self.args.model_type:
             meta_common_params['nn_act_fn'] = 'relu'
 
