@@ -380,24 +380,27 @@ def get_deep_args():
 
                             'nwck', 'nwck_wd',
 
-                            'nwck_wd_rerere_fmask_no_act_fn_relu',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_pen_indep_mean',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3_pen_indep_mean',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3_pen_indep_mean_detach_fi',
-
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_mlp_2',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_mlp_2',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_pen_indep_mean',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_pen_indep_mean_detach_fi',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_detach_fi',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_mlp_2',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_n_cl_3',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_n_cl_3_mlp_2',
 
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ift',
-                            'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3_pen_indep_mean',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3_pen_indep_mean_detach_fi',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean_detach_fi',
 
                             'nwck_wd_fmask_no',
                             'nwck_wd_fmask_only_sigma',
@@ -997,24 +1000,27 @@ def get_method(model):
     elif model in [
         'nwck', 'nwck_wd',
 
-        'nwck_wd_rerere_fmask_no_act_fn_relu',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_pen_indep_mean',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3_pen_indep_mean',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3_pen_indep_mean_detach_fi',
-
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_mlp_2',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_mlp_2',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_pen_indep_mean',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3_pen_indep_mean_detach_fi',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_detach_fi',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_mlp_2',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_n_cl_3',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_n_cl_3_mlp_2',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu_ift',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3_pen_indep_mean',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ift_n_cl_3_pen_indep_mean_detach_fi',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ift_pen_indep_mean_detach_fi',
 
         'nwck_wd_fmask_no', 'nwck_wd_fmask_only_sigma',
 

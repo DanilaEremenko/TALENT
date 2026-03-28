@@ -1,11 +1,6 @@
 {
-  "nwck_wd_rerere_fmask_no_act_fn_relu_n_cl_3_pen_indep_mean": {
+  "nwck_wd_rerere_fmask_no_act_fn_relu_ifs_mlp_2": {
     "model": {
-      "pen_k_indep_preds": [
-        "loguniform",
-        1e-1,
-        1e1
-      ],
       "rbp_init_max": [
         "int",
         1500,
@@ -20,6 +15,11 @@
         "int",
         32,
         512
+      ],
+      "cat_n_clusters": [
+        "int",
+        6,
+        32
       ],
       "clust_model_params": {
         "clust_model_lr": [

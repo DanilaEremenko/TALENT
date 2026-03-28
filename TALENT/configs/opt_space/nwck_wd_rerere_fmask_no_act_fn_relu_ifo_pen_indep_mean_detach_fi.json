@@ -1,5 +1,5 @@
 {
-  "nwck_wd_rerere_fmask_no_act_fn_relu_pen_indep_mean": {
+  "nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_detach_fi": {
     "model": {
       "pen_k_indep_preds": [
         "loguniform",
