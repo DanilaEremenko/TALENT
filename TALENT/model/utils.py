@@ -381,6 +381,7 @@ def get_deep_args():
                             'nwck', 'nwck_wd',
 
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_re',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_detach_fi',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_mlp_2',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
@@ -1004,6 +1005,7 @@ def get_method(model):
         'nwck', 'nwck_wd',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_re',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_detach_fi',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_mlp_2',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_n_cl_3',
