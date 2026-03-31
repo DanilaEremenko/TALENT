@@ -117,6 +117,10 @@ class NWCKMethod(Method):
             'optimized_mm': True
         }
         model_config['clust_model_params']['clust_model_fspace_weight_decay'] = 0
+
+        if 'clust_model_weight_decay' not in model_config['clust_model_params']:
+            model_config['clust_model_params']['clust_model_weight_decay'] = 0.0
+
         meta_common_params = {
             'nn_background_lr': None,
             'nn_background_weight_decay': None,
