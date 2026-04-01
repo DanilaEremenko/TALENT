@@ -47,10 +47,11 @@ class CatBoostMethod(classical_methods):
         else:
             X_train = np.concatenate([self.N['train'], self.C['train'].astype(str)], axis=1)
             X_val = np.concatenate([self.N['val'], self.C['val'].astype(str)], axis=1)
-        if self.args.gpu != 'cpu' and self.args.gpu != '':
-            task_type = 'GPU'
-        else:
-            task_type = 'CPU'
+        # if self.args.gpu != 'cpu' and self.args.gpu != '':
+        #     task_type = 'GPU'
+        # else:
+        #     task_type = 'CPU'
+        task_type = 'CPU'
         self.model = CatBoostRegressor(
             **model_config, 
             task_type=task_type, 

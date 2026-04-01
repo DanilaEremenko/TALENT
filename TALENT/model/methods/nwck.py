@@ -142,6 +142,12 @@ class NWCKMethod(Method):
         if self.args.model_type == 'nwck_wd_fmask_only_sigma':
             meta_common_params['clust_fspace'] = 'gumbel_inters_only_sigma'
 
+        if 'uniform_T' in self.args.model_type:
+            meta_common_params['pen_router_mode'] = 'uniform_T'
+
+        if 'uniform_B' in self.args.model_type:
+            meta_common_params['pen_router_mode'] = 'uniform_B'
+
         if 'fmask_no' in self.args.model_type:
             meta_common_params['clust_fspace'] = 'all'
 

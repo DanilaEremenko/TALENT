@@ -1,6 +1,11 @@
 {
-  "nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_blr_opt": {
+  "nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_uniform_T": {
     "model": {
+      "pen_k_router": [
+        "loguniform",
+        1e-5,
+        1e0
+      ],
       "pen_k_indep_preds": [
         "loguniform",
         1e-1,
@@ -44,8 +49,7 @@
         0.99
       ],
       "nn_background_lr": [
-        "?loguniform",
-        0,
+        "loguniform",
         1e-5,
         1e-2
       ],
