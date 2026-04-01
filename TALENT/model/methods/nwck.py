@@ -123,7 +123,7 @@ class NWCKMethod(Method):
 
         meta_common_params = {
             'nn_background_lr': None,
-            'nn_background_weight_decay': None,
+            'nn_background_weight_decay': 0.0,
             **meta_model.common_params
         }
         meta_common_params: Dict[str, Any] = {
