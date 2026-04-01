@@ -393,8 +393,11 @@ def get_deep_args():
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_mlp_2',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_uniform_B',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_uniform_T',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_re_nocwd2_uniform_B',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_re_nocwd2_uniform_T',
 
                             'nwck_wd_rerere_fmask_no_act_fn_relu',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifs',
@@ -1023,8 +1026,11 @@ def get_method(model):
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_mlp_2',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_uniform_B',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_uniform_T',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_re_nocwd2_uniform_B',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_re_nocwd2_uniform_T',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifs',
