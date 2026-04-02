@@ -135,7 +135,8 @@ class NWCKMethod(Method):
             key: val for key, val in meta_common_params.items()
             if key not in model_config.keys()
         }
-        if 'pen_k_ens_preds_corr' in model_config.keys() and model_config['pen_k_ens_preds_corr'] is not None:
+
+        if 'indep_preds' in self.args.model_type:
             meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
 
         if 'init_max_3000' in self.args.model_type:
