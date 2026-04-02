@@ -1,0 +1,72 @@
+{
+  "nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau": {
+    "model": {
+      "pen_k_indep_preds": [
+        "loguniform",
+        1e-1,
+        2e0
+      ],
+      "rbp_init_max": [
+        "int",
+        1500,
+        5000
+      ],
+      "nn_n_layers": [
+        "int",
+        2,
+        3
+      ],
+      "nn_n_neurons": [
+        "int",
+        32,
+        512
+      ],
+      "cat_n_clusters": [
+        "int",
+        6,
+        32
+      ],
+      "gumbel_cl_tau": [
+        "loguniform",
+        1e-3,
+        1e0
+      ],
+      "clust_model_params": {
+        "clust_model_lr": [
+          "loguniform",
+          1e-5,
+          1e-1
+        ]
+      },
+      "nn_dropout": [
+        "uniform",
+        0.0,
+        0.5
+      ],
+      "nn_adamw_b2": [
+        "loguniform",
+        0.85,
+        0.99
+      ],
+      "nn_background_lr": [
+        "loguniform",
+        1e-5,
+        1e-2
+      ],
+      "nn_background_weight_decay": [
+        "?loguniform",
+        0.0,
+        1e-6,
+        1e-4
+      ],
+      "nn_lr": [
+        "loguniform",
+        1e-4,
+        1e0
+      ]
+    },
+    "training": {
+    },
+    "general": {}
+  }
+}

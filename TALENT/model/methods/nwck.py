@@ -128,7 +128,8 @@ class NWCKMethod(Method):
         meta_common_params = {
             'nn_background_lr': None,
             'nn_background_weight_decay': 0.0,
-            **meta_model.common_params
+            **meta_model.common_params,
+            **common_params
         }
         meta_common_params: Dict[str, Any] = {
             key: val for key, val in meta_common_params.items()
@@ -167,6 +168,9 @@ class NWCKMethod(Method):
         if 'mlp_2' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_2'
 
+        if 'cl_tau' in self.args.model_type:
+            meta_common_params['gumbel_tau_mode'] = 'simple'
+
         if 'act_fn_relu' in self.args.model_type:
             meta_common_params['nn_act_fn'] = 'relu'
 
@@ -197,7 +201,6 @@ class NWCKMethod(Method):
             tmp_dir=None,
             cat_ids=cat_ids,
             **meta_common_params,
-            **common_params
             # **{key: val.to_lamda_d() for key, val in h_params.random_params.items()}
         )
 
