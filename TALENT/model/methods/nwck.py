@@ -119,7 +119,11 @@ class NWCKMethod(Method):
         model_config['clust_model_params']['clust_model_fspace_weight_decay'] = 0
 
         if 'clust_model_weight_decay' not in model_config['clust_model_params']:
-            model_config['clust_model_params']['clust_model_weight_decay'] = 0.0
+            if 'clust_model_lr1' in model_config['clust_model_params'].keys():
+                model_config['clust_model_params']['clust_model_weight_decay1'] = 0.0
+                model_config['clust_model_params']['clust_model_weight_decay2'] = 0.0
+            else:
+                model_config['clust_model_params']['clust_model_weight_decay'] = 0.0
 
         meta_common_params = {
             'nn_background_lr': None,
