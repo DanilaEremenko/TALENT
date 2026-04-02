@@ -101,7 +101,8 @@ class NWCKMethod(Method):
             'hard_M_conn_lr': None,
             'pen_k_hard_M_conn_l1': None,
             'pen_k_cl_convexity': None,
-            'gumbel_cl_tau': None,
+            'gumbel_cl_tau_T': None,
+            'gumbel_cl_tau_B': None,
             'gumbel_cl_init_tau': None,
             'gumbel_cl_max_epoch_k': None,
             'gumbel_hard_M_tau': None,
@@ -131,6 +132,11 @@ class NWCKMethod(Method):
             **meta_model.common_params,
             **common_params
         }
+        if 'gumbel_cl_tau' in model_config.keys():
+            gumbel_tau = model_config.pop('gumbel_cl_tau')
+            model_config['gumbel_cl_tau_T'] = gumbel_tau
+            model_config['gumbel_cl_tau_B'] = gumbel_tau
+
         meta_common_params: Dict[str, Any] = {
             key: val for key, val in meta_common_params.items()
             if key not in model_config.keys()
