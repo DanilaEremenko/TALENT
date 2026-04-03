@@ -203,6 +203,10 @@ class NWCKMethod(Method):
         if 'n_cl_3' in self.args.model_type:
             meta_common_params['cat_n_clusters'] = 3
 
+        if 'softplus' in self.args.model_type:
+            meta_common_params['sigma_norm'] = 'softplus'
+            meta_common_params['optimized_cdist'] = False
+
         if 'rcl' in self.args.model_type:
             meta_common_params['nn_n_layers'] = None
             meta_common_params['nn_dropout'] = None
