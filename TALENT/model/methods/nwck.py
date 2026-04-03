@@ -203,6 +203,13 @@ class NWCKMethod(Method):
         if 'n_cl_3' in self.args.model_type:
             meta_common_params['cat_n_clusters'] = 3
 
+        if 'rcl' in self.args.model_type:
+            meta_common_params['nn_n_layers'] = None
+            meta_common_params['nn_dropout'] = None
+            meta_common_params['nn_dropout_mode'] = None
+            meta_common_params['nn_batch_norm'] = None
+            meta_common_params['clust_model'] = 'rcl'
+
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
