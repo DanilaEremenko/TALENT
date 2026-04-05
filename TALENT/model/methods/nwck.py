@@ -207,6 +207,9 @@ class NWCKMethod(Method):
             meta_common_params['sigma_norm'] = 'softplus'
             meta_common_params['optimized_cdist'] = False
 
+        if 'sigma_shared' in self.args.model_type:
+            meta_common_params['use_sigma_shared'] = True
+
         if 'rcl' in self.args.model_type:
             meta_common_params['nn_n_layers'] = None
             meta_common_params['nn_dropout'] = None
