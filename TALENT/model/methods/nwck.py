@@ -210,12 +210,21 @@ class NWCKMethod(Method):
         if 'sigma_shared' in self.args.model_type:
             meta_common_params['use_sigma_shared'] = True
 
-        if 'rcl' in self.args.model_type:
+        # if 'lda' in self.args.model_type:
+        # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
+        # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
+
+        if 'rcl_kernel_mlp' in self.args.model_type:
+            meta_common_params['clust_model'] = 'rcl_kernel_mlp'
+        elif 'rcl' in self.args.model_type:
             meta_common_params['nn_n_layers'] = None
             meta_common_params['nn_dropout'] = None
             meta_common_params['nn_dropout_mode'] = None
             meta_common_params['nn_batch_norm'] = None
             meta_common_params['clust_model'] = 'rcl'
+
+        if 'fixed_cl' in self.args.model_type:
+            meta_common_params['fixed_cl_nn'] = True
 
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
