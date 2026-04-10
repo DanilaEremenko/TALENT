@@ -469,14 +469,15 @@ class NWCKMethod(Method):
                         return_cat_T=True,
                         indices=None
                     ))
-                eval_stats_l.append(
-                    dict(
-                        cl_T_probs=cl_T_probs.detach().cpu().numpy(),
-                        cl_B_probs=cl_B_probs.detach().cpu().numpy(),
-                        y_pred=y_pred.detach().cpu().numpy(),
-                        y_preds_indep=y_preds_indep.detach().cpu().numpy()
+                if i == 0:
+                    eval_stats_l.append(
+                        dict(
+                            cl_T_probs=cl_T_probs.detach().cpu().numpy().tolist(),
+                            cl_B_probs=cl_B_probs.detach().cpu().numpy().tolist(),
+                            y_pred=y_pred.detach().cpu().numpy().tolist(),
+                            y_preds_indep=y_preds_indep.detach().cpu().numpy().tolist()
+                        )
                     )
-                )
                 test_logit.append(y_pred.squeeze(-1))
                 test_label.append(y)
 
