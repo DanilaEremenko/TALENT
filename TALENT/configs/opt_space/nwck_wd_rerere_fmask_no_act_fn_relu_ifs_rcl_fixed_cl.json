@@ -1,25 +1,10 @@
 {
-  "nwck_wd_rerere_fmask_no_act_fn_relu_ifo_re_nocwd2_uniform_B": {
+  "nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_fixed_cl": {
     "model": {
-      "pen_k_router": [
-        "loguniform",
-        1e-5,
-        1e0
-      ],
       "rbp_init_max": [
         "int",
         1500,
         5000
-      ],
-      "nn_n_layers": [
-        "int",
-        2,
-        3
-      ],
-      "nn_n_neurons": [
-        "int",
-        32,
-        512
       ],
       "cat_n_clusters": [
         "int",
@@ -31,13 +16,14 @@
           "loguniform",
           1e-5,
           1e-1
+        ],
+        "clust_model_weight_decay": [
+          "?loguniform",
+          0.0,
+          1e-6,
+          1e-3
         ]
       },
-      "nn_dropout": [
-        "uniform",
-        0.0,
-        0.5
-      ],
       "nn_adamw_b2": [
         "loguniform",
         0.85,
@@ -56,8 +42,8 @@
       ],
       "nn_lr": [
         "loguniform",
-        1e-4,
-        1e0
+        1e-5,
+        1e-1
       ]
     },
     "training": {

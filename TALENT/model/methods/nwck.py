@@ -223,9 +223,6 @@ class NWCKMethod(Method):
             meta_common_params['nn_batch_norm'] = None
             meta_common_params['clust_model'] = 'rcl'
 
-        if 'fixed_cl' in self.args.model_type:
-            meta_common_params['fixed_cl_nn'] = True
-
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
