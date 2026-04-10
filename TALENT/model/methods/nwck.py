@@ -471,10 +471,10 @@ class NWCKMethod(Method):
                     ))
                 eval_stats_l.append(
                     dict(
-                        cl_T_probs=cl_T_probs.detach(),
-                        cl_B_probs=cl_B_probs.detach(),
-                        y_pred=y_pred.detach(),
-                        y_preds_indep=y_preds_indep.detach()
+                        cl_T_probs=cl_T_probs.detach().cpu().numpy(),
+                        cl_B_probs=cl_B_probs.detach().cpu().numpy(),
+                        y_pred=y_pred.detach().cpu().numpy(),
+                        y_preds_indep=y_preds_indep.detach().cpu().numpy()
                     )
                 )
                 test_logit.append(y_pred.squeeze(-1))
