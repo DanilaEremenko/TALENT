@@ -447,19 +447,43 @@ class NWCKMethod(Method):
         ## Evaluation Stage
         self.model.eval()
         test_logit, test_label = [], []
+
+        eval_stats_l = []
+
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.val_loader)):
                 X = torch.concat(X, dim=1) if isinstance(X, list) else X
                 if self.args.use_float:
                     X = X.float()
-                pred = self.model(
-                    X=X,
-                    x_B=self.x_B,
-                    indices=None,
-                ).squeeze(-1)
 
-                test_logit.append(pred)
+                y_pred, y_preds, \
+                    y_pred_indep, y_preds_indep, \
+                    x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
+                    x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
+                    _, _, \
+                    cl_T_B_probs, \
+                    p_matrix_act, weights_norm_masked_indep, weights_norm_masked = (
+                    self.model(
+                        X,
+                        x_B=self.x_B,
+                        return_cat_T=True,
+                        indices=None
+                    ))
+                eval_stats_l.append(
+                    dict(
+                        cl_T_probs=cl_T_probs.detach(),
+                        cl_B_probs=cl_B_probs.detach(),
+                        y_pred=y_pred.detach(),
+                        y_preds_indep=y_preds_indep.detach()
+                    )
+                )
+                test_logit.append(y_pred.squeeze(-1))
                 test_label.append(y)
+
+        self.eval_stats = dict(
+            eval_stats_l=eval_stats_l,
+            **self.model.get_struct_params_d()
+        )
 
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
