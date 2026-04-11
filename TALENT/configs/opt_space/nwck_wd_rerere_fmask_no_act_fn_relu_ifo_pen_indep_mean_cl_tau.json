@@ -26,6 +26,11 @@
         6,
         32
       ],
+      "gumbel_cl_tau": [
+        "loguniform",
+        1e-3,
+        1e0
+      ],
       "clust_model_params": {
         "clust_model_lr": [
           "loguniform",
