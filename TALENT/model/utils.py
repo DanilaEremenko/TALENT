@@ -382,6 +382,7 @@ def get_deep_args():
 
                             'nwck_wd_rerere_fmask_no_act_fn_relu', 'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_cl_tau',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2',
@@ -952,6 +953,7 @@ def get_method(model):
     elif model in [
         'nwck_wd_rerere_fmask_no_act_fn_relu', 'nwck_wd_rerere_fmask_no_act_fn_relu_ifo',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_cl_tau',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2',
