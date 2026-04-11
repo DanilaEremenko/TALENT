@@ -473,7 +473,7 @@ class NWCKMethod(Method):
                     eval_stats_l.append(
                         dict(
                             cl_T_probs=cl_T_probs.detach().cpu().numpy().tolist(),
-                            cl_B_probs=cl_B_probs.detach().cpu().numpy().tolist(),
+                            cl_B_probs=cl_B_probs.detach().cpu().numpy().tolist() if cl_B_probs is not None else None,
                             y_pred=y_pred.detach().cpu().numpy().tolist(),
                             y_preds_indep=y_preds_indep.detach().cpu().numpy().tolist() if y_pred_indep is not None else None
                         )
