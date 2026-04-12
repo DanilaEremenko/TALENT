@@ -413,6 +413,14 @@ def get_deep_args():
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_evh',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_evh_clgum',
 
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_clgum',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_evh',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_evh_clgum',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_evh',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_evh_clgum',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_clgum',
+
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau_evh_clgum',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau_evh',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau_clgum',
@@ -999,6 +1007,14 @@ def get_method(model):
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_clgum',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_evh',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_evh_clgum',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_clgum',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_evh',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_rcl_cl_tau_re_evh_clgum',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_evh',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_evh_clgum',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifs_cl_tau_re_clgum',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau_evh_clgum',
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_pen_indep_mean_re_nocwd2_cl_tau_evh',
