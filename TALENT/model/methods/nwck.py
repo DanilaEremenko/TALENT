@@ -145,6 +145,12 @@ class NWCKMethod(Method):
         if 'indep_preds' in self.args.model_type:
             meta_common_params['pen_ens_preds_corr_mode'] = 'preds_indep'
 
+        if 'evh' in self.args.model_type:
+            meta_common_params['eval_hard'] = True
+
+        if 'clgum' in self.args.model_type:
+            meta_common_params['clust_func_mode'] = 'gumbel'
+
         if 'init_max_3000' in self.args.model_type:
             meta_common_params['rbp_init_max'] = 3000
         elif 'init_max_5000' in self.args.model_type:
@@ -371,6 +377,7 @@ class NWCKMethod(Method):
 
             y_pred, y_preds, \
                 y_pred_indep, y_preds_indep, \
+                sigma_M, \
                 x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
                 x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                 _, _, \
@@ -398,7 +405,9 @@ class NWCKMethod(Method):
                 cl_T_B_probs=cl_T_B_probs,
 
                 epoch=epoch,
-                batch_i=batch_i
+                batch_i=batch_i,
+                sigma_M=sigma_M,
+                **self.model.get_struct_params_d()
             )
 
             if self.model_sk_wrapper.problem_mode == 'reg':
@@ -458,6 +467,7 @@ class NWCKMethod(Method):
 
                 y_pred, y_preds, \
                     y_pred_indep, y_preds_indep, \
+                    sigma_M, \
                     x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
                     x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                     _, _, \
