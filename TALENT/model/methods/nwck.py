@@ -132,10 +132,23 @@ class NWCKMethod(Method):
             **meta_model.common_params,
             **common_params
         }
-        if 'gumbel_cl_tau' in model_config.keys():
-            gumbel_tau = model_config.pop('gumbel_cl_tau')
-            model_config['gumbel_cl_tau_T'] = gumbel_tau
-            model_config['gumbel_cl_tau_B'] = gumbel_tau
+
+        meta_common_params['epoch_n'] = self.args.max_epoch
+
+        if 'cl_tau' in self.args.model_type:
+            if 'smcl_tau' in self.args.model_type:
+                assert 'gumbel_cl_max_epoch_k' in model_config.keys()
+                meta_common_params['gumbel_tau_mode'] = 'smart'
+            else:
+                meta_common_params['gumbel_tau_mode'] = 'simple'
+
+            if 'gumbel_cl_tau' in model_config.keys():
+                gumbel_tau = model_config.pop('gumbel_cl_tau')
+                model_config['gumbel_cl_tau_T'] = gumbel_tau
+                model_config['gumbel_cl_tau_B'] = gumbel_tau
+        else:
+            assert 'gumbel_cl_tau' not in model_config.keys()
+            assert 'gumbel_cl_tau' not in model_config.keys()
 
         meta_common_params: Dict[str, Any] = {
             key: val for key, val in meta_common_params.items()
@@ -180,9 +193,6 @@ class NWCKMethod(Method):
 
         if 'mlp_2' in self.args.model_type:
             meta_common_params['clust_model'] = 'mlp_2'
-
-        if 'cl_tau' in self.args.model_type:
-            meta_common_params['gumbel_tau_mode'] = 'simple'
 
         if 'act_fn_relu' in self.args.model_type:
             meta_common_params['nn_act_fn'] = 'relu'
