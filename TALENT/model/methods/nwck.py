@@ -370,6 +370,7 @@ class NWCKMethod(Method):
                 make_random_batches(self.train_size, self.args.batch_size, self.args.device)
         ):
             self.train_step = self.train_step + 1
+            self.model.epoch_i = self.train_step
 
             x_l = []
             if self.N is not None:
