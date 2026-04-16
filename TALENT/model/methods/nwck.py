@@ -161,8 +161,12 @@ class NWCKMethod(Method):
         if 'evh' in self.args.model_type:
             meta_common_params['eval_hard'] = True
 
-        if 'clgum' in self.args.model_type:
+        if 'clgumh' in self.args.model_type:
+            meta_common_params['clust_func_mode'] = 'gumbelh'
+        elif 'clgum' in self.args.model_type:
             meta_common_params['clust_func_mode'] = 'gumbel'
+        elif 'clstes' in self.args.model_type:
+            meta_common_params['clust_func_mode'] = 'stes'
 
         if 'init_max_3000' in self.args.model_type:
             meta_common_params['rbp_init_max'] = 3000
