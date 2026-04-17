@@ -26,6 +26,11 @@
           "loguniform",
           1e-5,
           1e-1
+        ],
+        "clust_model_scale_lr": [
+          "loguniform",
+          1e-5,
+          1e-1
         ]
       },
       "nn_adamw_b2": [

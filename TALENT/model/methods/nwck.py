@@ -245,10 +245,10 @@ class NWCKMethod(Method):
             meta_common_params['nn_dropout_mode'] = None
             meta_common_params['nn_batch_norm'] = None
             meta_common_params['clust_model'] = 'rcl'
-        if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
-            for postf in ['lr', 'weight_decay']:
-                model_config['clust_model_params'][f'clust_model_scale_{postf}'] = \
-                    model_config['clust_model_params'][f'clust_model_{postf}']
+        # if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
+        #     for postf in ['lr', 'weight_decay']:
+        #         model_config['clust_model_params'][f'clust_model_scale_{postf}'] = \
+        #             model_config['clust_model_params'][f'clust_model_{postf}']
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,

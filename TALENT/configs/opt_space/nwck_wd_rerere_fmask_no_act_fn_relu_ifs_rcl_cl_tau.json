@@ -22,11 +22,10 @@
           1e-5,
           1e-1
         ],
-        "clust_model_weight_decay": [
-          "?loguniform",
-          0.0,
-          1e-6,
-          1e-3
+        "clust_model_scale_lr": [
+          "loguniform",
+          1e-5,
+          1e-1
         ]
       },
       "nn_adamw_b2": [
