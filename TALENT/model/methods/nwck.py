@@ -161,6 +161,9 @@ class NWCKMethod(Method):
         if 'evh' in self.args.model_type:
             meta_common_params['eval_hard'] = True
 
+        if 'taufnorm' in self.args.model_type:
+            meta_common_params['use_tau_fnum_norm'] = True
+
         if 'clgumh' in self.args.model_type:
             meta_common_params['clust_func_mode'] = 'gumbelh'
         elif 'clgum' in self.args.model_type:
@@ -242,7 +245,10 @@ class NWCKMethod(Method):
             meta_common_params['nn_dropout_mode'] = None
             meta_common_params['nn_batch_norm'] = None
             meta_common_params['clust_model'] = 'rcl'
-
+        if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
+            for postf in ['lr', 'weight_decay']:
+                model_config['clust_model_params'][f'clust_model_scale_{postf}'] = \
+                    model_config['clust_model_params'][f'clust_model_{postf}']
         self.model_sk_wrapper = CatKernelScikitNw(
             **model_config,
             tmp_dir=None,
@@ -422,7 +428,8 @@ class NWCKMethod(Method):
                 epoch=epoch,
                 batch_i=batch_i,
                 sigma_M=sigma_M,
-                **self.model.get_struct_params_d()
+                **self.model.get_struct_params_d(),
+                train=True
             )
 
             if self.model_sk_wrapper.problem_mode == 'reg':
@@ -475,7 +482,7 @@ class NWCKMethod(Method):
         eval_stats_l = []
 
         with torch.no_grad():
-            for i, (X, y) in tqdm(enumerate(self.val_loader)):
+            for batch_i, (X, y) in tqdm(enumerate(self.val_loader)):
                 X = torch.concat(X, dim=1) if isinstance(X, list) else X
                 if self.args.use_float:
                     X = X.float()
@@ -494,7 +501,28 @@ class NWCKMethod(Method):
                         return_cat_T=True,
                         indices=None
                     ))
-                if i == 0:
+
+                self.epoch_lamda(
+                    X=X,
+
+                    x_T_f=x_T_f,
+                    x_B_f=x_B_f,
+
+                    x_T_c=x_T_c,
+                    x_B_c=x_B_c,
+
+                    cl_T_probs=cl_T_probs,
+                    cl_B_probs=cl_B_probs,
+
+                    cl_T_B_probs=cl_T_B_probs,
+
+                    epoch=epoch,
+                    batch_i=batch_i,
+                    sigma_M=sigma_M,
+                    **self.model.get_struct_params_d(),
+                    train=False
+                )
+                if batch_i == 0:
                     eval_stats_l.append(
                         dict(
                             cl_T_probs=cl_T_probs.detach().cpu().numpy().tolist(),
