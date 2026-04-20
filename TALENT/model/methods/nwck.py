@@ -524,12 +524,14 @@ class NWCKMethod(Method):
                     train=False
                 )
                 if batch_i == 0:
+                    detach_f = lambda t: t.detach().cpu().numpy().tolist()
                     eval_stats_l.append(
                         dict(
-                            cl_T_probs=cl_T_probs.detach().cpu().numpy().tolist(),
-                            cl_B_probs=cl_B_probs.detach().cpu().numpy().tolist() if cl_B_probs is not None else None,
-                            y_pred=y_pred.detach().cpu().numpy().tolist(),
-                            y_preds_indep=y_preds_indep.detach().cpu().numpy().tolist() if y_pred_indep is not None else None
+                            sigma_M=detach_f(sigma_M),
+                            cl_T_probs=detach_f(cl_T_probs),
+                            cl_B_probs=detach_f(cl_B_probs) if cl_B_probs is not None else None,
+                            y_pred=detach_f(y_pred),
+                            y_preds_indep=detach_f(y_preds_indep) if y_pred_indep is not None else None
                         )
                     )
                 test_logit.append(y_pred.squeeze(-1))
