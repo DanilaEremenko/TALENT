@@ -241,6 +241,7 @@ class NWCKMethod(Method):
         if 'rcl_kernel_mlp' in self.args.model_type:
             meta_common_params['clust_model'] = 'rcl_kernel_mlp'
         elif 'rcl' in self.args.model_type:
+            model_config['clust_model_params']['clust_model_scales_init_t'] = 1e-2
             meta_common_params['nn_n_layers'] = None
             meta_common_params['nn_dropout'] = None
             meta_common_params['nn_dropout_mode'] = None
@@ -442,8 +443,8 @@ class NWCKMethod(Method):
                 y_preds=y_preds,
                 y_preds_indep=y_preds_indep,
                 y_true=y_batch,
-                cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
-                cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
+                cl_T_logits=cl_T_logits, cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
+                cl_B_logits=cl_B_logits, cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
                 cl_T_B_probs=cl_T_B_probs,
                 weights_norm_masked_indep=weights_norm_masked_indep,
                 criterion=self.criterion
