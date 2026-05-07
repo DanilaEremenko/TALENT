@@ -255,10 +255,19 @@ class NWCKMethod(Method):
             elif 'scm_rot' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot'
 
-            if 'kminit' in self.args.model_type:
-                model_config['clust_model_params']['clust_model_init_mode'] = 'kmeans'
+            if 'clcin_km' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'kmeans'
+            elif 'clcin_uniform' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'uniform'
+            elif 'clcin_pca' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'pca'
             else:
-                model_config['clust_model_params']['clust_model_init_mode'] = None
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = None
+
+            if 'clsin_ce' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_scales_mode'] = 'centroids'
+            else:
+                model_config['clust_model_params']['clust_model_init_scales_mode'] = None
 
             # if 'nclscales' in self.args.model_type:
             #     cat_n_clusters = meta_common_params['cat_n_clusters'] \
