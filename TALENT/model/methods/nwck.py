@@ -256,15 +256,20 @@ class NWCKMethod(Method):
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot'
 
             if 'kminit' in self.args.model_type:
-                model_config['clust_model_params']['clust_model_kmeans_init'] = True
+                model_config['clust_model_params']['clust_model_init_mode'] = 'kmeans'
             else:
-                model_config['clust_model_params']['clust_model_kmeans_init'] = False
+                model_config['clust_model_params']['clust_model_init_mode'] = None
 
             # if 'nclscales' in self.args.model_type:
             #     cat_n_clusters = meta_common_params['cat_n_clusters'] \
             #         if 'cat_n_clusters' in meta_common_params.keys() \
             #         else model_config['cat_n_clusters']
             #     model_config['clust_model_params']['clust_model_scales_init_t'] *= cat_n_clusters
+
+        if 'dnorm_l1' in self.args.model_type:
+            meta_common_params['dist_norm'] = 'l1'
+            meta_common_params['sigma_norm'] = 'l1'
+            meta_common_params['optimized_cdist'] = False
 
         # if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
         #     for postf in ['lr', 'weight_decay']:
