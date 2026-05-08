@@ -266,8 +266,13 @@ class NWCKMethod(Method):
 
             if 'clsin_ce' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_scales_mode'] = 'centroids'
+            elif 'clsin_gl' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_scales_mode'] = 'global'
             else:
                 model_config['clust_model_params']['clust_model_init_scales_mode'] = None
+
+            if 'xdff' in self.args.model_type:
+                meta_common_params['x_noise_mode'] = 'x_distribution_ff'
 
             # if 'nclscales' in self.args.model_type:
             #     cat_n_clusters = meta_common_params['cat_n_clusters'] \
