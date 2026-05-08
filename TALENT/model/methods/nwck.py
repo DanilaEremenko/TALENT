@@ -252,6 +252,7 @@ class NWCKMethod(Method):
 
             if 'scm_rot_riem' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot_riem'
+                model_config['clust_model_params']['clust_model_rot_weight_decay'] = 0.
             elif 'scm_rot' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot'
 
