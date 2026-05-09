@@ -238,6 +238,9 @@ class NWCKMethod(Method):
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
 
+        if 'xdff' in self.args.model_type:
+            meta_common_params['x_noise_mode'] = 'x_distribution_ff'
+
         if 'rcl_kernel_mlp' in self.args.model_type:
             meta_common_params['clust_model'] = 'rcl_kernel_mlp'
         elif 'rcl' in self.args.model_type:
@@ -271,9 +274,6 @@ class NWCKMethod(Method):
                 model_config['clust_model_params']['clust_model_init_scales_mode'] = 'global'
             else:
                 model_config['clust_model_params']['clust_model_init_scales_mode'] = None
-
-            if 'xdff' in self.args.model_type:
-                meta_common_params['x_noise_mode'] = 'x_distribution_ff'
 
             # if 'nclscales' in self.args.model_type:
             #     cat_n_clusters = meta_common_params['cat_n_clusters'] \
@@ -377,23 +377,51 @@ class NWCKMethod(Method):
 
         test_logit, test_label = [], []
 
+        eval_stats_l = []
+
         tic = time.time()
         with torch.no_grad():
-            for i, (X, y) in tqdm(enumerate(self.test_loader)):
-
+            for batch_i, (X, y) in tqdm(enumerate(self.test_loader)):
                 X = X if isinstance(X, torch.Tensor) else torch.concat([x for x in X if X is not None], dim=1)
 
                 if self.args.use_float:
                     X = X.float()
 
-                pred = self.model(
+                y_pred, y_preds, \
+                    y_pred_indep, y_preds_indep, \
+                    sigma_M, \
+                    x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
+                    x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
+                    _, _, \
+                    cl_T_B_probs, \
+                    p_matrix_act, weights_norm_masked_indep, weights_norm_masked = self.model(
                     X=X,
                     x_B=self.x_B,
+                    return_cat_T=True,
                     indices=None,
-                ).squeeze(-1)
+                )
+                if self.model_sk_wrapper.problem_mode == 'reg':
+                    y_pred = y_pred.squeeze(1)
 
-                test_logit.append(pred)
+                if batch_i == 0:
+                    detach_f = lambda t: t.detach().cpu().numpy().tolist()
+                    eval_stats_l.append(
+                        dict(
+                            sigma_M=detach_f(sigma_M),
+                            cl_T_probs=detach_f(cl_T_probs),
+                            cl_B_probs=detach_f(cl_B_probs) if cl_B_probs is not None else None,
+                            y_pred=detach_f(y_pred),
+                            y_preds_indep=detach_f(y_preds_indep) if y_pred_indep is not None else None
+                        )
+                    )
+
+                test_logit.append(y_pred)
                 test_label.append(y)
+
+        self.eval_stats = dict(
+            eval_stats_l=eval_stats_l,
+            **self.model.get_struct_params_d()
+        )
 
         self.predict_time = time.time() - tic
 
@@ -520,8 +548,6 @@ class NWCKMethod(Method):
         self.model.eval()
         test_logit, test_label = [], []
 
-        eval_stats_l = []
-
         with torch.no_grad():
             for batch_i, (X, y) in tqdm(enumerate(self.val_loader)):
                 X = torch.concat(X, dim=1) if isinstance(X, list) else X
@@ -563,24 +589,8 @@ class NWCKMethod(Method):
                     **self.model.get_struct_params_d(),
                     train=False
                 )
-                if batch_i == 0:
-                    detach_f = lambda t: t.detach().cpu().numpy().tolist()
-                    eval_stats_l.append(
-                        dict(
-                            sigma_M=detach_f(sigma_M),
-                            cl_T_probs=detach_f(cl_T_probs),
-                            cl_B_probs=detach_f(cl_B_probs) if cl_B_probs is not None else None,
-                            y_pred=detach_f(y_pred),
-                            y_preds_indep=detach_f(y_preds_indep) if y_pred_indep is not None else None
-                        )
-                    )
                 test_logit.append(y_pred.squeeze(-1))
                 test_label.append(y)
-
-        self.eval_stats = dict(
-            eval_stats_l=eval_stats_l,
-            **self.model.get_struct_params_d()
-        )
 
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
