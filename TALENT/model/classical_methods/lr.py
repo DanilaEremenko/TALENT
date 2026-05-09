@@ -5,6 +5,10 @@ import pickle
 import time
 import sklearn.metrics as skm
 import numpy as np
+
+from utils_xai.xai_sk import explain_scikit
+
+
 class LinearRegressionMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -32,7 +36,7 @@ class LinearRegressionMethod(classical_methods):
         return time_cost
         
     
-    def predict(self, data, info, model_name):
+    def predict(self, data, info, model_name, do_eval_stats=False):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)
@@ -43,6 +47,9 @@ class LinearRegressionMethod(classical_methods):
         if self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        self.eval_stats = {
+            'shap_values': explain_scikit(model=self.model, X=self.N_test)
+        } if do_eval_stats else None
         return vres, metric_name, test_logit
     
     def metric(self, predictions, labels, y_info):

@@ -5,6 +5,9 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
+from utils_xai.xai_sk import explain_scikit
+
+
 class XGBoostMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -40,7 +43,7 @@ class XGBoostMethod(classical_methods):
             pickle.dump(self.model, f)
         return time_cost
     
-    def predict(self,data, info, model_name):
+    def predict(self,data, info, model_name, do_eval_stats=True):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)
@@ -54,4 +57,7 @@ class XGBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        self.eval_stats = {
+            'shap_values': explain_scikit(model=self.model, X=self.N_test)
+        } if do_eval_stats else None
         return vres, metric_name, test_logit
