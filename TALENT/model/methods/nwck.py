@@ -162,9 +162,6 @@ class NWCKMethod(Method):
         if 'evh' in self.args.model_type:
             meta_common_params['eval_hard'] = True
 
-        if 'taufnorm' in self.args.model_type:
-            meta_common_params['use_tau_fnum_norm'] = True
-
         if 'clgumh' in self.args.model_type:
             meta_common_params['clust_func_mode'] = 'gumbelh'
         elif 'clgum' in self.args.model_type:
@@ -231,8 +228,8 @@ class NWCKMethod(Method):
             meta_common_params['sigma_norm'] = 'softplus'
             meta_common_params['optimized_cdist'] = False
 
-        if 'sigma_shared' in self.args.model_type:
-            meta_common_params['use_sigma_shared'] = True
+        model_config.setdefault('init_sigma_t', 1e0)
+        model_config.setdefault('init_sigma_ff_t', 1e0)
 
         # if 'lda' in self.args.model_type:
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
@@ -249,7 +246,8 @@ class NWCKMethod(Method):
             meta_common_params['nn_dropout_mode'] = None
             meta_common_params['nn_batch_norm'] = None
             meta_common_params['clust_model'] = 'rcl'
-            model_config['clust_model_params'].setdefault('clust_model_scales_init_t', 1e0)
+            model_config['clust_model_params'].setdefault('clust_model_init_scales_t', 1e0)
+            model_config['clust_model_params'].setdefault('clust_model_init_scales_ff_t', 1e0)
 
             model_config['clust_model_params'].setdefault('clust_model_scales_mode', 'simple')
 
@@ -285,6 +283,10 @@ class NWCKMethod(Method):
             meta_common_params['dist_norm'] = 'l1'
             meta_common_params['sigma_norm'] = 'l1'
             meta_common_params['optimized_cdist'] = False
+
+        if 'fsnorm' in self.args.model_type:
+            model_config['init_sigma_t'] /= x_B.shape[1]
+            model_config['clust_model_params']['clust_model_init_scales_t'] /= x_B.shape[1]
 
         # if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
         #     for postf in ['lr', 'weight_decay']:
