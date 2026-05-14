@@ -397,7 +397,7 @@ class NWCKMethod(Method):
 
                 y_pred, y_preds, \
                     y_pred_indep, y_preds_indep, \
-                    sigma_M, \
+                    sigma_M, hard_M, \
                     x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
                     x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                     _, _, \
@@ -416,6 +416,7 @@ class NWCKMethod(Method):
                     eval_stats_l.append(
                         dict(
                             sigma_M=detach_f(sigma_M),
+                            hard_M=detach_f(hard_M) if hard_M is not None else None,
                             cl_T_probs=detach_f(cl_T_probs),
                             cl_B_probs=detach_f(cl_B_probs) if cl_B_probs is not None else None,
                             y_pred=detach_f(y_pred),
