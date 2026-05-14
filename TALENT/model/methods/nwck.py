@@ -231,6 +231,11 @@ class NWCKMethod(Method):
         model_config.setdefault('init_sigma_t', 1e0)
         model_config.setdefault('init_sigma_ff_t', 1e0)
 
+        assert not meta_common_params['use_hard_M_features']
+
+        if 'uhmf' in self.args.model_type:
+            meta_common_params['use_hard_M_features'] = True
+
         # if 'lda' in self.args.model_type:
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
@@ -286,7 +291,8 @@ class NWCKMethod(Method):
 
         if 'fsnorm' in self.args.model_type:
             model_config['init_sigma_t'] /= x_B.shape[1]
-            model_config['clust_model_params']['clust_model_init_scales_t'] /= x_B.shape[1]
+            if 'clust_model_init_scales_t' in model_config['clust_model_params'].keys():
+                model_config['clust_model_params']['clust_model_init_scales_t'] /= x_B.shape[1]
 
         # if 'rcl' in self.args.model_type and 'clust_model_sigma_lr' not in model_config['clust_model_params']:
         #     for postf in ['lr', 'weight_decay']:
@@ -469,7 +475,7 @@ class NWCKMethod(Method):
 
             y_pred, y_preds, \
                 y_pred_indep, y_preds_indep, \
-                sigma_M, \
+                sigma_M, hard_M, \
                 x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
                 x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                 _, _, \
@@ -515,6 +521,8 @@ class NWCKMethod(Method):
                 cl_T_logits=cl_T_logits, cl_T_probs=cl_T_probs, x_T_c=x_T_c, x_T_f=x_T_f,
                 cl_B_logits=cl_B_logits, cl_B_probs=cl_B_probs, x_B_c=x_B_c, x_B_f=x_B_f,
                 cl_T_B_probs=cl_T_B_probs,
+                sigma_M=sigma_M,
+                hard_M=hard_M,
                 weights_norm_masked_indep=weights_norm_masked_indep,
                 criterion=self.criterion
             )
@@ -558,7 +566,7 @@ class NWCKMethod(Method):
 
                 y_pred, y_preds, \
                     y_pred_indep, y_preds_indep, \
-                    sigma_M, \
+                    sigma_M, hard_M, \
                     x_T_c, x_T_f, cl_T_logits, cl_T_probs, \
                     x_B_c, x_B_f, cl_B_logits, cl_B_probs, \
                     _, _, \
