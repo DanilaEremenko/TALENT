@@ -248,6 +248,8 @@ class NWCKMethod(Method):
         model_config.setdefault('init_sigma_t', 1e0)
         model_config.setdefault('init_sigma_ff_t', 1e0)
 
+        model_config.setdefault('init_hard_M_t', 1e0)
+
         assert not meta_common_params['use_hard_M_features']
 
         if 'uhmf' in self.args.model_type:
