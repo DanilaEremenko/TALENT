@@ -41,6 +41,17 @@ def stub_epoch_lamda(**kwargs):
     return None
 
 
+def mse_safe_broadcast_w_weights(input, target, weights=None) -> torch.Tensor:
+    assert target.dim() in [1, 2], f"Unexpected target.shape = {target.shape}"
+    if target.dim() == 2 and target.size(-1) == 1:
+        target = target.squeeze(-1)
+    assert input.shape == target.shape, f"{input.shape} != {target.shape}"
+    if weights is not None:
+        return (torch.nn.functional.mse_loss(input=input, target=target, reduce=False) * weights).sum()
+    else:
+        return torch.nn.functional.mse_loss(input=input, target=target)
+
+
 class NWCKMethod(Method):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -211,11 +222,17 @@ class NWCKMethod(Method):
         if 'ift' in self.args.model_type:
             meta_common_params['neigh_clusters'] = 'isol_fast_T_cl'
 
-        if 'pen_indep_mean' in self.args.model_type:
+        if 'wpen_indep_mean' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'mean_weighted'
+        elif 'wpen_indep_best' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'best_weighted'
+        elif 'wpen_indep_worst' in self.args.model_type:
+            meta_common_params['pen_indep_preds_mode'] = 'worst_weighted'
+        elif 'pen_indep_mean' in self.args.model_type:
             meta_common_params['pen_indep_preds_mode'] = 'mean'
-        if 'pen_indep_best' in self.args.model_type:
+        elif 'pen_indep_best' in self.args.model_type:
             meta_common_params['pen_indep_preds_mode'] = 'best'
-        if 'pen_indep_worst' in self.args.model_type:
+        elif 'pen_indep_worst' in self.args.model_type:
             meta_common_params['pen_indep_preds_mode'] = 'worst'
 
         if 'detach_fi' in self.args.model_type:
@@ -338,6 +355,7 @@ class NWCKMethod(Method):
             self.n_num_features, self.n_cat_features = self.D.n_num_features, self.D.n_cat_features
 
             self.data_format(is_train=True)
+            self.criterion = mse_safe_broadcast_w_weights
         if config is not None:
             self.reset_stats_withconfig(config)
         self.construct_model()
@@ -382,6 +400,7 @@ class NWCKMethod(Method):
         self.model.eval()
 
         self.data_format(False, N, C, y)
+        self.criterion = mse_safe_broadcast_w_weights
 
         test_logit, test_label = [], []
 
