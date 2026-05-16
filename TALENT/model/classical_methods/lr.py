@@ -6,7 +6,7 @@ import time
 import sklearn.metrics as skm
 import numpy as np
 
-from utils_xai.xai_sk import explain_scikit
+from utils_xai.xai_sk import explain_scikit_all
 
 
 class LinearRegressionMethod(classical_methods):
@@ -28,6 +28,7 @@ class LinearRegressionMethod(classical_methods):
         if not train:
             return
         tic = time.time()
+        self.X_train = self.N['train']
         self.model.fit(self.N['train'], self.y['train'])
         self.trlog['best_res'] = self.model.score(self.N['val'], self.y['val'])
         time_cost = time.time() - tic
@@ -47,9 +48,11 @@ class LinearRegressionMethod(classical_methods):
         if self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.eval_stats = {
-            'shap_values': explain_scikit(model=self.model, X=self.N_test)
-        } if do_eval_stats else None
+        self.eval_stats = explain_scikit_all(
+            model=self.model,
+            X_train=self.X_train,
+            X_test=self.N_test
+        ) if do_eval_stats else None
         return vres, metric_name, test_logit
     
     def metric(self, predictions, labels, y_info):

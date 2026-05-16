@@ -12,7 +12,7 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.xai_sk import explain_scikit
+from utils_xai.xai_sk import explain_scikit_all
 
 
 class CatBoostMethod(classical_methods):
@@ -50,6 +50,8 @@ class CatBoostMethod(classical_methods):
         else:
             X_train = np.concatenate([self.N['train'], self.C['train'].astype(str)], axis=1)
             X_val = np.concatenate([self.N['val'], self.C['val'].astype(str)], axis=1)
+
+        self.X_train = X_train
         # if self.args.gpu != 'cpu' and self.args.gpu != '':
         #     task_type = 'GPU'
         # else:
@@ -107,8 +109,10 @@ class CatBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(test_data)
 
-        self.eval_stats = {
-            'shap_values': explain_scikit(model=self.model, X=test_data)
-        } if do_eval_stats else None
+        self.eval_stats = explain_scikit_all(
+            model=self.model,
+            X_train=self.X_train,
+            X_test=test_data
+        ) if do_eval_stats else None
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         return vres, metric_name, test_logit

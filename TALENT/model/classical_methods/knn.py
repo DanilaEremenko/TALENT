@@ -5,8 +5,6 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.xai_sk import explain_scikit
-
 
 class KnnMethod(classical_methods):
     def __init__(self, args, is_regression):
@@ -54,7 +52,4 @@ class KnnMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.eval_stats = {
-            'shap_values': explain_scikit(model=self.model, X=self.N_test)
-        } if do_eval_stats else None
         return vres, metric_name, test_logit

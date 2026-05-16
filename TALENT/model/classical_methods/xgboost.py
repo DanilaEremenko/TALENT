@@ -5,7 +5,7 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.xai_sk import explain_scikit
+from utils_xai.xai_sk import explain_scikit_all
 
 
 class XGBoostMethod(classical_methods):
@@ -31,6 +31,7 @@ class XGBoostMethod(classical_methods):
         fit_config.pop('n_bins')
         fit_config['eval_set'] = [(self.N['val'], self.y['val'])]
         tic = time.time()
+        self.X_train = self.N['train']
         self.model.fit(self.N['train'], self.y['train'],**fit_config)
         if not self.is_regression:
             y_val_pred = self.model.predict(self.N['val'])
@@ -57,7 +58,9 @@ class XGBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.eval_stats = {
-            'shap_values': explain_scikit(model=self.model, X=self.N_test)
-        } if do_eval_stats else None
+        self.eval_stats = explain_scikit_all(
+            model=self.model,
+            X_train=self.X_train,
+            X_test=self.N_test
+        ) if do_eval_stats else None
         return vres, metric_name, test_logit
