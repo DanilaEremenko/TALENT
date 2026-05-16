@@ -1,7 +1,7 @@
 import math
 import sys
 
-from torch.nn.functional import one_hot
+from torch.nn.functional import one_hot, cross_entropy
 
 from TALENT.model.methods.base import Method
 import time
@@ -50,6 +50,13 @@ def mse_safe_broadcast_w_weights(input, target, weights=None) -> torch.Tensor:
         return (torch.nn.functional.mse_loss(input=input, target=target, reduce=False) * weights).sum()
     else:
         return torch.nn.functional.mse_loss(input=input, target=target)
+
+
+def ce_w_weights(input, target, weights=None) -> torch.Tensor:
+    if weights is not None:
+        return (cross_entropy(input=input, target=target, reduce=False) * weights).sum()
+    else:
+        return cross_entropy(input=input, target=target)
 
 
 class NWCKMethod(Method):
@@ -357,7 +364,11 @@ class NWCKMethod(Method):
             self.n_num_features, self.n_cat_features = self.D.n_num_features, self.D.n_cat_features
 
             self.data_format(is_train=True)
-            self.criterion = mse_safe_broadcast_w_weights
+            if self.is_regression:
+                self.criterion = mse_safe_broadcast_w_weights
+            else:
+                self.criterion = ce_w_weights
+
         if config is not None:
             self.reset_stats_withconfig(config)
         self.construct_model()
@@ -402,7 +413,10 @@ class NWCKMethod(Method):
         self.model.eval()
 
         self.data_format(False, N, C, y)
-        self.criterion = mse_safe_broadcast_w_weights
+        if self.is_regression:
+            self.criterion = mse_safe_broadcast_w_weights
+        else:
+            self.criterion = ce_w_weights
 
         test_logit, test_label = [], []
 
