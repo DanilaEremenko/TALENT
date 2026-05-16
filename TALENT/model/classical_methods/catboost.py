@@ -101,6 +101,8 @@ class CatBoostMethod(classical_methods):
             test_data = self.C_test.astype(str)
         else:
             test_data = np.concatenate([self.N_test, self.C_test.astype(str)], axis=1)
+
+        tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(test_data)
             #Denormalize regression predictions back to original scale
@@ -114,5 +116,6 @@ class CatBoostMethod(classical_methods):
             X_train=self.X_train,
             X_test=test_data
         ) if do_eval_stats else None
+        self.eval_stats |= dict(predict_time=time.time() - tic)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         return vres, metric_name, test_logit

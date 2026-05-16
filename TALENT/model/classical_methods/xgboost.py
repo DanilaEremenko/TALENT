@@ -50,6 +50,7 @@ class XGBoostMethod(classical_methods):
             self.model = pickle.load(f)
         self.data_format(False, N, C, y)
         test_label = self.y_test
+        tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(self.N_test)
             # Denormalize regression predictions back to original scale
@@ -63,4 +64,5 @@ class XGBoostMethod(classical_methods):
             X_train=self.X_train,
             X_test=self.N_test
         ) if do_eval_stats else None
+        self.eval_stats |= dict(predict_time=time.time() - tic)
         return vres, metric_name, test_logit

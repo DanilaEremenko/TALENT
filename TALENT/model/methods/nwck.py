@@ -452,6 +452,7 @@ class NWCKMethod(Method):
             eval_stats_l=eval_stats_l,
             **self.model.get_struct_params_d()
         )
+        self.eval_stats |= dict(predict_time=time.time() - tic)
 
         self.predict_time = time.time() - tic
 
