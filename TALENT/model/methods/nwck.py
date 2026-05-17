@@ -255,6 +255,7 @@ class NWCKMethod(Method):
         model_config.setdefault('init_sigma_t', 1e0)
         model_config.setdefault('init_sigma_ff_t', 1e0)
         model_config.setdefault('pen_k_rcl_within', None)
+        model_config.setdefault('pen_k_rcl_sscorr', None)
 
         model_config.setdefault('init_hard_M_t', 1e0)
 
