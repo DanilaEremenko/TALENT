@@ -510,12 +510,12 @@ class NWCKMethod(Method):
         return vl, vres, metric_name, test_logit
 
     def train_epoch(self, epoch):
-        self.model.train()
-        tl = Averager()
         if 'rcl' in self.args.model_type:
             X_train_all = np.concatenate([arr['train'] for arr in (self.N, self.C) if arr is not None], axis=1)
             self.model.cat_nn_T.init_centroids_and_scales(X=X_train_all, y=self.y['train'])
             self.model.cat_nn_B.init_centroids_and_scales(X=X_train_all, y=self.y['train'])
+        self.model.train()
+        tl = Averager()
         i = 0
         for batch_i, batch_idx in enumerate(
                 make_random_batches(self.train_size, self.args.batch_size, self.args.device)
