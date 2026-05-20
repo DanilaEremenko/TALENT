@@ -309,10 +309,14 @@ class NWCKMethod(Method):
             elif 'scm_rot' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot'
 
-            if 'clcin_kmy' in self.args.model_type:
+            if 'clust_model_init_centroids_mode' in model_config['clust_model_params'].keys():
+                pass
+            elif 'clcin_kmy' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'kmeansy'
             elif 'clcin_km' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'kmeans'
+            elif 'clcin_far' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'far'
             elif 'clcin_uniform' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'uniform'
             elif 'clcin_pca' in self.args.model_type:
