@@ -256,6 +256,8 @@ class NWCKMethod(Method):
         model_config.setdefault('init_sigma_ff_t', 1e0)
         model_config.setdefault('pen_k_rcl_within', None)
         model_config.setdefault('pen_k_rcl_sscorr', None)
+        model_config.setdefault('sigma_weight_decay_mode', None)
+        model_config.setdefault('sigma_weight_decay_params', None)
 
         model_config.setdefault('init_hard_M_t', 1e0)
 
@@ -267,6 +269,23 @@ class NWCKMethod(Method):
         # if 'lda' in self.args.model_type:
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
         # meta_common_params['x_noise_mode'] = 'x_distribution_lda'
+
+        for sigma_norm_mode in [
+            'l1',
+            'l2',
+            'l0_5',
+            'scad',
+            'mcp',
+            'cauchy',
+            'hard_l1',
+            'smooth_hard_l1',
+            'soft_cut',
+            'exp_decay',
+            'rank_l1'
+        ]:
+            if f'snorm_{sigma_norm_mode}' in self.args.model_type:
+                model_config['sigma_weight_decay_mode'] = sigma_norm_mode
+                break
 
         if 'xdff' in self.args.model_type:
             meta_common_params['x_noise_mode'] = 'x_distribution_ff'
@@ -290,7 +309,9 @@ class NWCKMethod(Method):
             elif 'scm_rot' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_scales_mode'] = 'rot'
 
-            if 'clcin_km' in self.args.model_type:
+            if 'clcin_kmy' in self.args.model_type:
+                model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'kmeansy'
+            elif 'clcin_km' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'kmeans'
             elif 'clcin_uniform' in self.args.model_type:
                 model_config['clust_model_params']['clust_model_init_centroids_mode'] = 'uniform'
@@ -491,6 +512,10 @@ class NWCKMethod(Method):
     def train_epoch(self, epoch):
         self.model.train()
         tl = Averager()
+        if 'rcl' in self.args.model_type:
+            X_train_all = np.concatenate([arr['train'] for arr in (self.N, self.C) if arr is not None], axis=1)
+            self.model.cat_nn_T.init_centroids_and_scales(X=X_train_all, y=self.y['train'])
+            self.model.cat_nn_B.init_centroids_and_scales(X=X_train_all, y=self.y['train'])
         i = 0
         for batch_i, batch_idx in enumerate(
                 make_random_batches(self.train_size, self.args.batch_size, self.args.device)
@@ -563,7 +588,9 @@ class NWCKMethod(Method):
                 sigma_M=sigma_M,
                 hard_M=hard_M,
                 weights_norm_masked_indep=weights_norm_masked_indep,
-                criterion=self.criterion
+                criterion=self.criterion,
+                epoch_i=epoch,
+                max_epoch=self.args.max_epoch
             )
 
             tl.add(loss.item())
