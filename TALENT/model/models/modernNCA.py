@@ -62,7 +62,7 @@ class ModernNCA(nn.Module):
         block = MLP_Block(self.dim, self.d_block, self.dropout)
         return block
             
-    def forward(self, x, y, candidate_x, candidate_y, is_train, return_weights=False):
+    def forward(self, x, y, candidate_x, candidate_y, is_train, return_weights_and_embs=False):
         if is_train:
             data_size = candidate_x.shape[0]
             retrival_size = int(data_size * self.sample_rate)
@@ -114,7 +114,7 @@ class ModernNCA(nn.Module):
             eps = 1e-7
             logits = torch.log(logits + eps)
 
-        if return_weights:
-            return logits, distances
+        if return_weights_and_embs:
+            return logits, distances, x
         else:
             return logits.squeeze(-1)
