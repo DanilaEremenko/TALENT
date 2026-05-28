@@ -196,7 +196,7 @@ class ModernNCAMethod(Method):
                 pred = pred.squeeze(-1)
 
                 if i == 0 and do_eval_stats:
-                    from xai_integrated_grad.modernNCA import explain_nn_ig
+                    from utils_xai.ig import explain_nn_ig
                     eval_stats_l.append(
                         dict(
                             ig_values=explain_nn_ig(
