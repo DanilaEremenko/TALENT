@@ -111,7 +111,12 @@ class CatBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(test_data)
 
-        self.eval_stats = explain_catboost(model=self.model, X_test=test_data, n_clusters=3) if do_eval_stats else None
+        self.eval_stats = explain_catboost(
+            model=self.model,
+            X_train=self.X_train,
+            X_test=test_data,
+            n_clusters=3
+        ) if do_eval_stats else None
         self.eval_stats |= dict(predict_time=time.time() - tic)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         return vres, metric_name, test_logit
