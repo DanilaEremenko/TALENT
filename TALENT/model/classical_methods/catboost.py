@@ -12,7 +12,7 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.xai_sk import explain_scikit_all
+from utils_xai.shap import explain_catboost
 
 
 class CatBoostMethod(classical_methods):
@@ -111,11 +111,7 @@ class CatBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(test_data)
 
-        self.eval_stats = explain_scikit_all(
-            model=self.model,
-            X_train=self.X_train,
-            X_test=test_data
-        ) if do_eval_stats else None
+        self.eval_stats = explain_catboost(model=self.model, X_test=test_data, n_clusters=3) if do_eval_stats else None
         self.eval_stats |= dict(predict_time=time.time() - tic)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         return vres, metric_name, test_logit
