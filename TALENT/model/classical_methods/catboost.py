@@ -12,7 +12,7 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.shap import explain_catboost
+from utils_xai_local.shap import explain_catboost
 
 
 class CatBoostMethod(classical_methods):
