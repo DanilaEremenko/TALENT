@@ -207,7 +207,8 @@ class ModernNCAMethod(Method):
                                     candidate_x=candidate_x,
                                     candidate_y=candidate_y,
                                     is_train=False,
-                                ).unsqueeze(1)
+                                ).unsqueeze(1),
+                                target=0
                             ).detach().cpu().numpy().tolist(),
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
                         )
