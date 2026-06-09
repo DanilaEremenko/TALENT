@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import time
 import os.path as osp
+
+from sklearn.cluster import KMeans
 from tqdm import tqdm
 import sklearn.metrics as skm
 from sklearn.preprocessing import label_binarize
@@ -178,7 +180,7 @@ class Method(object, metaclass=abc.ABCMeta):
         self.fit_time = time_cost
 
 
-    def predict(self, data, info, model_name):
+    def predict(self, data, info, model_name, do_eval_stats=False):
         """
         Predict the results of the data.
 
@@ -194,24 +196,45 @@ class Method(object, metaclass=abc.ABCMeta):
         ## Evaluation Stage
         self.model.eval()
         self.data_format(False, N, C, y)
-        
+
         tic = time.time()
         test_logit, test_label = [], []
+
+        eval_stats_l = []
+
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
                 if self.N is not None and self.C is not None:
-                    X_num, X_cat = X[0], X[1]
+                    get_num_cat = lambda X: (X[0], X[1])
                 elif self.C is not None and self.N is None:
-                    X_num, X_cat = None, X
+                    get_num_cat = lambda X: (None, X)
                 else:
-                    X_num, X_cat = X, None  
-                        
-                pred = self.model(X_num, X_cat)
+                    get_num_cat = lambda X: (X, None)
+
+                X_num, X_cat = get_num_cat(X)
+
+                pred, embs = self.model(X_num, X_cat, return_embs=True)
+
+                if i == 0 and do_eval_stats:
+                    from utils_xai_local.ig import explain_nn_ig
+                    eval_stats_l.append(
+                        dict(
+                            ig_values=explain_nn_ig(
+                                X_train=X, X_test=X,
+                                model=lambda x: self.model(*get_num_cat(x)).unsqueeze(1),
+                                target=0
+                            ).detach().cpu().numpy().tolist(),
+                            cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
+                        )
+                    )
 
                 test_logit.append(pred)
                 test_label.append(y)
-        
+
         self.predict_time = time.time() - tic
+        if do_eval_stats:
+            self.eval_stats = dict(eval_stats_l=eval_stats_l)
+            self.eval_stats |= dict(predict_time=self.predict_time)
         
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
