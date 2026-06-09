@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import time
 import os.path as osp
+
+from sklearn.cluster import KMeans
 from tqdm import tqdm
 import sklearn.metrics as skm
 
