@@ -220,7 +220,7 @@ class Method(object, metaclass=abc.ABCMeta):
                     eval_stats_l.append(
                         dict(
                             ig_values=explain_nn_ig(
-                                X_train=X, X_test=X,
+                                X_train=self.N['train'], X_test=X,
                                 model=lambda x: self.model(*get_num_cat(x)).unsqueeze(1),
                                 target=0
                             ).detach().cpu().numpy().tolist(),
