@@ -157,7 +157,8 @@ class TabM(nn.Module):
         self.k = k
 
     def forward(
-        self, x_num: None | Tensor = None, x_cat: None | Tensor = None
+        self, x_num: None | Tensor = None, x_cat: None | Tensor = None,
+            return_embs: bool = False,
     ) -> Tensor:
         x = []
         if x_num is not None:
@@ -178,8 +179,8 @@ class TabM(nn.Module):
         else:
             assert self.affine_ensemble is None
 
-        x = self.backbone(x)
-        x = self.output(x)
+        emb = self.backbone(x)
+        x = self.output(emb)
         # print(x.shape)
         if self.k is None:
             # Adjust the output shape for vanilla networks to make them compatible
@@ -188,4 +189,7 @@ class TabM(nn.Module):
             x = x[:, None]
         if self.d_out == 1:
             x = x.squeeze(-1)
-        return x
+        if return_embs:
+            return x, emb
+        else:
+            return x
