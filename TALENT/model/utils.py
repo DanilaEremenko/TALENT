@@ -498,6 +498,22 @@ def get_deep_args():
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_gtcx',
                             'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_gtcxr',
 
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_ndsq',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_ndsq',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_xdffch',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_xdffch',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_xdfftr',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_xdfftr',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_stfrw',
+
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_v2',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_BB_clsmind1',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_TT_clsmind1',
+                            'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_TB_clsmind1',
+
                             'nam'
 
                         ]
@@ -1152,7 +1168,23 @@ def get_method(model):
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_clsmind2',
 
         'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_gtcx',
-        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_gtcxr'
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_gtcxr',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_ndsq',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_ndsq',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_xdffch',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_xdffch',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_ssto_n_cl_3_xdfftr',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_cl_tau_rcl_pwths3_ssto3_n_cl_3_xdfftr',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_stfrw',
+
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_v2',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_BB_clsmind1',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_TT_clsmind1',
+        'nwck_wd_rerere_fmask_no_act_fn_relu_ifo_wpen_indep_mean_cl_tau_ssto_n_cl_3_TB_clsmind1',
 
     ]:
         from utils_talent_nwck.nwck import NWCKMethod

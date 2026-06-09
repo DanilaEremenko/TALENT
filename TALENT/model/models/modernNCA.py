@@ -81,6 +81,7 @@ class ModernNCA(nn.Module):
         x = self.encoder(x)
         candidate_x = self.encoder(candidate_x)
         if self.n_blocks > 0:
+            # TODO ?????????
             x = self.post_encoder(x)
             candidate_x = self.post_encoder(candidate_x)
         if is_train: 
