@@ -31,17 +31,17 @@ class CatBoostMethod(classical_methods):
         self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
         self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
         self.n_num_features, self.n_cat_features = self.D.n_num_features, self.D.n_cat_features
-        
+
         model_config = None
         if config is not None:
             self.reset_stats_withconfig(config)
             model_config = config['model']
-        
+
         if model_config is None:
             model_config = self.args.config['model']
         self.data_format(is_train = True)
         from catboost import CatBoostClassifier, CatBoostRegressor
-        
+
         cat_features = list(range(self.n_num_features, self.n_num_features + self.n_cat_features))
         if self.C is None:
             X_train,X_val = self.N['train'],self.N['val']
@@ -58,16 +58,16 @@ class CatBoostMethod(classical_methods):
         #     task_type = 'CPU'
         task_type = 'CPU'
         self.model = CatBoostRegressor(
-            **model_config, 
-            task_type=task_type, 
-            random_state=self.args.seed, 
-            cat_features=cat_features, 
+            **model_config,
+            task_type=task_type,
+            random_state=self.args.seed,
+            cat_features=cat_features,
             allow_writing_files=False
         ) if self.is_regression else CatBoostClassifier(
-            **model_config, 
-            task_type=task_type, 
-            random_state=self.args.seed, 
-            cat_features=cat_features, 
+            **model_config,
+            task_type=task_type,
+            random_state=self.args.seed,
+            cat_features=cat_features,
             allow_writing_files=False
         )
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
@@ -80,7 +80,7 @@ class CatBoostMethod(classical_methods):
         self.model.fit(X_train, self.y['train'],**fit_config)
         if not self.is_regression:
             y_pred_val = self.model.predict(X_val)
-            self.trlog['best_res'] = accuracy_score(self.y['val'], y_pred_val) 
+            self.trlog['best_res'] = accuracy_score(self.y['val'], y_pred_val)
         else:
             y_pred_val = self.model.predict(X_val)
             self.trlog['best_res'] = mean_squared_error(self.y['val'], y_pred_val, squared=False)*self.y_info['std']
@@ -111,12 +111,14 @@ class CatBoostMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(test_data)
 
-        self.eval_stats = explain_catboost(
-            model=self.model,
-            X_train=self.X_train,
-            X_test=test_data,
-            n_clusters=3
+        self.eval_stats = dict(
+            **explain_catboost(
+                model=self.model,
+                X_train=self.X_train,
+                X_test=test_data,
+                n_clusters=3,
+            ),
+            predict_time=time.time() - tic
         ) if do_eval_stats else None
-        self.eval_stats |= dict(predict_time=time.time() - tic)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         return vres, metric_name, test_logit
