@@ -97,7 +97,8 @@ class TabMMethod(Method):
                         dict(
                             ig_values=explain_nn_ig(
                                 X_train=X, X_test=X,
-                                model=lambda x: self.model(*get_num_cat(x)).mean(dim=1,keepdim=True),
+                                model=lambda x: self.model(*get_num_cat(x)).mean(dim=1).unsqueeze(1)
+                                if self.is_regression else self.model(*get_num_cat(x)).mean(dim=1),
                                 target=0
                             ).detach().cpu().numpy().tolist(),
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs.mean(dim=1)).tolist()
