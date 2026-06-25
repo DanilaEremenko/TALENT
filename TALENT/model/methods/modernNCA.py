@@ -197,18 +197,17 @@ class ModernNCAMethod(Method):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
-                    common_inf_args = dict(
-                        y=None,
-                        candidate_x=candidate_x,
-                        candidate_y=candidate_y,
-                        is_train=False,
-                    )
                     eval_stats_l.append(
                         dict(
                             ig_values=explain_nn_ig(
                                 X_train=candidate_x, X_test=x,
-                                model=lambda x: self.model(x=x, **common_inf_args).unsqueeze(1)
-                                if self.is_regression else self.model(x=x, **common_inf_args),
+                                model=lambda x: self.model(
+                                    x=x,
+                                    y=None,
+                                    candidate_x=candidate_x,
+                                    candidate_y=candidate_y,
+                                    is_train=False,
+                                ).unsqueeze(1),
                                 target=0
                             ).detach().cpu().numpy().tolist(),
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
