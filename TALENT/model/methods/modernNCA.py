@@ -203,14 +203,17 @@ class ModernNCAMethod(Method):
                         candidate_y=candidate_y,
                         is_train=False,
                     )
+                    model_fn = lambda x: self.model(x=x, **common_inf_args).unsqueeze(1) if self.is_regression else self.model(x=x, **common_inf_args)
+                    n_targets = 1 if self.is_regression else self.model(x=x, **common_inf_args).shape[1]
                     eval_stats_l.append(
                         dict(
-                            ig_values=explain_nn_ig(
-                                X_train=candidate_x, X_test=x,
-                                model=lambda x: self.model(x=x, **common_inf_args).unsqueeze(1)
-                                if self.is_regression else self.model(x=x, **common_inf_args),
-                                target=0
-                            ).detach().cpu().numpy().tolist(),
+                            ig_values=[
+                                explain_nn_ig(
+                                    X_train=candidate_x, X_test=x,
+                                    model=model_fn, target=cls
+                                ).detach().cpu().numpy().tolist()
+                                for cls in range(n_targets)
+                            ],
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
                         )
                     )

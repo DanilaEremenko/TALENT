@@ -202,7 +202,7 @@ class Method(object, metaclass=abc.ABCMeta):
 
         eval_stats_l = []
 
-        with torch.no_grad():
+        with (torch.no_grad()):
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
                 if self.N is not None and self.C is not None:
                     get_num_cat = lambda X: (X[0], X[1])
@@ -217,14 +217,18 @@ class Method(object, metaclass=abc.ABCMeta):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
+                    model_fn = lambda x: self.model(*get_num_cat(x)).unsqueeze(1) if self.is_regression \
+                        else self.model(*get_num_cat(x))
+                    n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).shape[1]
                     eval_stats_l.append(
                         dict(
-                            ig_values=explain_nn_ig(
-                                X_train=self.N['train'], X_test=X,
-                                model=lambda x: self.model(*get_num_cat(x)).unsqueeze(1)
-                                if self.is_regression else self.model(*get_num_cat(x)),
-                                target=0
-                            ).detach().cpu().numpy().tolist(),
+                            ig_values=[
+                                explain_nn_ig(
+                                    X_train=self.N['train'], X_test=X,
+                                    model=model_fn, target=cls
+                                ).detach().cpu().numpy().tolist()
+                                for cls in range(n_targets)
+                            ],
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
                         )
                     )

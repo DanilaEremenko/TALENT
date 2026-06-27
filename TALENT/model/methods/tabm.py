@@ -93,14 +93,17 @@ class TabMMethod(Method):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
+                    model_fn = lambda x: self.model(*get_num_cat(x)).mean(dim=1).unsqueeze(1) if self.is_regression else self.model(*get_num_cat(x)).mean(dim=1)
+                    n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).mean(dim=1).shape[1]
                     eval_stats_l.append(
                         dict(
-                            ig_values=explain_nn_ig(
-                                X_train=X, X_test=X,
-                                model=lambda x: self.model(*get_num_cat(x)).mean(dim=1).unsqueeze(1)
-                                if self.is_regression else self.model(*get_num_cat(x)).mean(dim=1),
-                                target=0
-                            ).detach().cpu().numpy().tolist(),
+                            ig_values=[
+                                explain_nn_ig(
+                                    X_train=X, X_test=X,
+                                    model=model_fn, target=cls
+                                ).detach().cpu().numpy().tolist()
+                                for cls in range(n_targets)
+                            ],
                             cluster_test=KMeans(n_clusters=3).fit_predict(embs.mean(dim=1)).tolist()
                         )
                     )
