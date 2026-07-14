@@ -251,18 +251,26 @@ class MemoryUsageEstimator:
                 free_memory = (
                     os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
                 )
-            except ValueError:
-                warnings.warn(
-                    "Could not get system memory, defaulting to"
-                    f" {default_gb_cpu_if_failed_to_calculate} GB",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-                free_memory = cls.convert_units(
-                    default_gb_cpu_if_failed_to_calculate,
-                    "gb",
-                    "b",
-                )
+            except (ValueError, AttributeError):
+                # os.sysconf is POSIX-only — on Windows the attribute doesn't
+                # exist at all (AttributeError, not ValueError), so fall back
+                # to psutil (already a dependency here) before giving up to
+                # the hardcoded default.
+                try:
+                    import psutil
+                    free_memory = psutil.virtual_memory().available / 1e9
+                except Exception:
+                    warnings.warn(
+                        "Could not get system memory, defaulting to"
+                        f" {default_gb_cpu_if_failed_to_calculate} GB",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                    free_memory = cls.convert_units(
+                        default_gb_cpu_if_failed_to_calculate,
+                        "gb",
+                        "b",
+                    )
 
         elif device.type.startswith("cuda"):
             t = torch.cuda.get_device_properties(0).total_memory

@@ -3,7 +3,7 @@
         "model": {},
         "training": {},
         "general": {
-            "sample_size": 10000
+            "sample_size": ["categorical", [10000]]
         }
     }
 }
