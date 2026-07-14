@@ -137,15 +137,30 @@ class TabPFNMethod(Method):
         - the sklearn wrapper exposes no return_embs-style argument;
           embeddings only appear when the *raw* transformer is called with
           only_return_standard_out=False (out["test_embeddings"]/
-          out["standard"], see PerFeatureTransformer._forward).
-        So this bypasses the sklearn wrapper's predict_proba/predict and
-        replicates its internal forward pass by hand, minus inference_mode,
-        using only the first ensemble member (mirroring do_eval_stats's
-        existing "first batch only" convention in tabm.py/modernNCA.py) and
-        only the first args.batch_size test rows (there is no dataloader
-        here — predict() scores the whole test set in one call — so this
-        stands in for "first batch")."""
+          out["standard"], see PerFeatureTransformer._forward);
+        - the deployed ensemble's own preprocessors (engine.preprocessors,
+          e.g. default_classifier_preprocessor_configs()) do NOT preserve
+          the raw feature space: "quantile_uni_coarse" + append_original=True
+          + global_transformer_name="svd" turns 16 raw columns into 41 (16
+          original + 16 quantile-transformed + SVD components), which is
+          incomparable to imps_T_true (computed in the 16-raw-feature space
+          by get_common_xai_clust_stats). So this fits its OWN throwaway,
+          no-op ensemble member (PreprocessorConfig("none", ...), no
+          append/SVD/polynomial/fingerprint features) purely for this
+          explanation pass — column-count- and column-order-preserving
+          (only per-column standardization, which doesn't change relative
+          feature importance), never used for the actual prediction/metrics.
+        Uses only the first args.batch_size test rows (there is no
+        dataloader here — predict() scores the whole test set in one call —
+        so this stands in for tabm.py/modernNCA.py's "first batch only"
+        do_eval_stats convention)."""
         from utils_xai_local.ig import explain_nn_ig
+        from TALENT.model.lib.tabpfn_v2.tabpfn.preprocessing import (
+            ClassifierEnsembleConfig,
+            PreprocessorConfig,
+            RegressorEnsembleConfig,
+            fit_preprocessing,
+        )
 
         engine = self.model.executor_
         if not hasattr(engine, 'preprocessors'):
@@ -153,7 +168,6 @@ class TabPFNMethod(Method):
             # the default used by construct_model) is supported here.
             return dict(ig_values=[], cluster_test=[])
 
-        preprocessor = engine.preprocessors[0]
         cat_ix = engine.cat_ixs[0]
         device = self.model.device_
 
@@ -161,6 +175,38 @@ class TabPFNMethod(Method):
         X = _fix_dtypes(X, cat_indices=self.model.categorical_features_indices)
         X = self.model.preprocessor_.transform(X)
         X = X[: self.args.batch_size]
+
+        # Same outer (ordinal-encoding) transform used at fit time, replayed
+        # on the exact training data — reproduces the raw, pre-ensemble
+        # X_train/y_train that create_inference_engine originally received
+        # (not stored on engine itself, only the already-preprocessed
+        # per-ensemble-member versions are).
+        X_train_raw = self.model.preprocessor_.transform(
+            _fix_dtypes(self.sampled_X, cat_indices=self.model.categorical_features_indices)
+        )
+        no_op_preprocess_config = PreprocessorConfig(
+            "none", categorical_name="numeric", subsample_features=-1,
+        )
+        if self.is_regression:
+            y_train_raw = (self.sampled_Y - self.model.y_train_mean_) / self.model.y_train_std_
+            no_op_config = RegressorEnsembleConfig(
+                preprocess_config=no_op_preprocess_config,
+                add_fingerprint_feature=False, polynomial_features="no",
+                feature_shift_count=0, feature_shift_decoder=None, subsample_ix=None,
+                target_transform=None,
+            )
+        else:
+            y_train_raw = self.model.label_encoder_.transform(self.sampled_Y)
+            no_op_config = ClassifierEnsembleConfig(
+                preprocess_config=no_op_preprocess_config,
+                add_fingerprint_feature=False, polynomial_features="no",
+                feature_shift_count=0, feature_shift_decoder=None, subsample_ix=None,
+                class_permutation=None,
+            )
+        [(_, preprocessor, X_train_np, y_train_np, noop_cat_ix)] = fit_preprocessing(
+            configs=[no_op_config], X_train=X_train_raw, y_train=y_train_raw,
+            random_state=0, cat_ix=cat_ix, n_workers=1, parallel_mode='block',
+        )
 
         transformer = engine.model.to(device)
         if engine.force_inference_dtype is not None:
@@ -172,8 +218,8 @@ class TabPFNMethod(Method):
         # same transformer instance here.
         transformer.reset_save_peak_mem_factor(None)
         try:
-            X_train_t = torch.as_tensor(engine.X_trains[0], dtype=torch.float32, device=device)
-            y_train_t = torch.as_tensor(engine.y_trains[0], dtype=torch.float32, device=device)
+            X_train_t = torch.as_tensor(X_train_np, dtype=torch.float32, device=device)
+            y_train_t = torch.as_tensor(y_train_np, dtype=torch.float32, device=device)
             X_test_t = torch.as_tensor(preprocessor.transform(X).X, dtype=torch.float32, device=device)
             n_train = len(y_train_t)
 
@@ -182,7 +228,7 @@ class TabPFNMethod(Method):
                 out = transformer(
                     None, X_full, y_train_t,
                     only_return_standard_out=False,
-                    categorical_inds=cat_ix,
+                    categorical_inds=noop_cat_ix,
                     single_eval_pos=n_train,
                 )
                 return out['standard'].squeeze(1), out['test_embeddings'].squeeze(1)
