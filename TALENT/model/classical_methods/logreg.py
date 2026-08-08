@@ -39,6 +39,6 @@ class LogRegMethod(classical_methods):
         test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         self.eval_stats = dict(
-            coef=self.model.coef_,
+            coef=self.model.coef_.tolist(),
         ) if do_eval_stats else None
         return vres, metric_name, test_logit
