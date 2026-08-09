@@ -5,7 +5,7 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai.xai_sk import explain_scikit_all
+from utils_res_analysis.utils_xai_comparison.xai_sk import explain_scikit_all
 
 
 class XGBoostMethod(classical_methods):
