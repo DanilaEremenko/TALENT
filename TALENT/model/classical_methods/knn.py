@@ -52,4 +52,5 @@ class KnnMethod(classical_methods):
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        self.eval_stats = {}
         return vres, metric_name, test_logit
