@@ -5,7 +5,8 @@ from sklearn.preprocessing import label_binarize
 
 from TALENT.model.utils import (
     set_seeds,
-    get_device
+    get_device,
+    check_softmax
 )
 # from sklearn.externals import joblib
 from TALENT.model.lib.data import (
@@ -17,14 +18,7 @@ from TALENT.model.lib.data import (
     data_label_process,
 )
 
-def check_softmax(logits):
-    # Check if any values are outside the [0, 1] range and Ensure they sum to 1
-    if np.any((logits < 0) | (logits > 1)) or (not np.allclose(logits.sum(axis=-1), 1, atol=1e-5)):
-        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))  # stabilize by subtracting max
-        return exps / np.sum(exps, axis=1, keepdims=True)
-    else:
-        return logits
-    
+
 class classical_methods(object, metaclass=abc.ABCMeta):
     def __init__(self, args, is_regression):
         self.args = args
@@ -89,7 +83,44 @@ class classical_methods(object, metaclass=abc.ABCMeta):
         set_seeds(self.args.seed)
         self.config = self.args.config = config
 
-    def metric(self, predictions, labels, y_info):
+    def _val_proba(self, X):
+        """Validation-set class probabilities used for HPO metric selection.
+
+        Defaults to the fitted estimator's ``predict_proba``; subclasses
+        without one should override (e.g. distance-based ``NearestCentroid``).
+        """
+        return self.model.predict_proba(X)
+
+    def _record_best_res(self, val_features):
+        """Set ``trlog['best_res']`` for HPO, honouring ``args.tune_metric``.
+
+        With no ``tune_metric`` configured the historical behaviour is kept
+        exactly (validation accuracy for classification, std-scaled RMSE for
+        regression). Otherwise the configured metric is read from ``metric()``.
+        """
+        from TALENT.model.lib.tuning_metric import resolve_tune_metric, select_objective
+        from sklearn.metrics import accuracy_score, mean_squared_error
+        y_val = self.y['val']
+        if resolve_tune_metric(self.args) is None:
+            y_pred = self.model.predict(val_features)
+            if self.is_regression:
+                self.trlog['best_res'] = mean_squared_error(y_val, y_pred) ** 0.5 * self.y_info['std']
+            else:
+                self.trlog['best_res'] = accuracy_score(y_val, y_pred)
+            return
+        logit = self.model.predict(val_features) if self.is_regression else self._val_proba(val_features)
+        vres, names = self.metric(logit, y_val, self.y_info)
+        self.trlog['best_res'], _ = select_objective(vres, names, self.args, self.is_regression)
+
+    def metric(self, predictions, labels, y_info, threshold=None):
+        """Compute evaluation metrics.
+
+        :param threshold: float or None. If given and the task is binary
+            classification, use ``predictions[:, 1] >= threshold`` for the
+            hard-prediction metrics (Accuracy, Avg_Recall, Avg_Precision,
+            F1). Threshold-independent metrics (LogLoss, AUC, Brier, ECE)
+            are not affected. Silently ignored for regression/multiclass.
+        """
         if not isinstance(labels, np.ndarray):
             labels = labels.cpu().numpy()
         if not isinstance(predictions, np.ndarray):
@@ -101,36 +132,52 @@ class classical_methods(object, metaclass=abc.ABCMeta):
             if y_info['policy'] == 'mean_std':
                 mae *= y_info['std']
                 rmse *= y_info['std']
-            return (mae,r2,rmse), ("MAE", "R2", "RMSE")
+            return (mae, r2, rmse), ("MAE", "R2", "RMSE")
         elif self.is_binclass:
-            # if not softmax, convert to probabilities
             predictions = check_softmax(predictions)
-            accuracy = skm.accuracy_score(labels, predictions.argmax(axis=-1))
-            avg_recall = skm.balanced_accuracy_score(labels, predictions.argmax(axis=-1))
-            avg_precision = skm.precision_score(labels, predictions.argmax(axis=-1), average='macro')
-            f1_score = skm.f1_score(labels, predictions.argmax(axis=-1), average='binary')
-            log_loss = skm.log_loss(labels, predictions)
-            auc = skm.roc_auc_score(labels, predictions[:, 1])
-            return (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC")
-        elif self.is_multiclass:
-            # if not softmax, convert to probabilities
-            predictions = check_softmax(predictions)
-            accuracy = skm.accuracy_score(labels, predictions.argmax(axis=-1))
-            avg_recall = skm.balanced_accuracy_score(labels, predictions.argmax(axis=-1))
-            avg_precision = skm.precision_score(labels, predictions.argmax(axis=-1), average='macro')
-            f1_score = skm.f1_score(labels, predictions.argmax(axis=-1), average='macro')
+            if threshold is not None:
+                hard_preds = (predictions[:, 1] >= threshold).astype(int)
+            else:
+                hard_preds = predictions.argmax(axis=-1)
+            accuracy = skm.accuracy_score(labels, hard_preds)
+            avg_recall = skm.balanced_accuracy_score(labels, hard_preds)
+            avg_precision = skm.precision_score(labels, hard_preds, average='macro', zero_division=0)
+            f1_score = skm.f1_score(labels, hard_preds, average='binary')
             log_loss = skm.log_loss(labels, predictions, labels=y_info['classes'])
-            
+            auc = skm.roc_auc_score(labels, predictions[:, 1], labels=y_info['classes']) if len(np.unique(labels)) == 2 else float("nan")
+            from TALENT.model.lib.calibration import brier_score, expected_calibration_error
+            brier = brier_score(labels, predictions)
+            ece = expected_calibration_error(labels, predictions)
+            return (
+                (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc, brier, ece),
+                ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC", "Brier", "ECE"),
+            )
+        elif self.is_multiclass:
+            predictions = check_softmax(predictions)
+            hard_preds = predictions.argmax(axis=-1)
+            accuracy = skm.accuracy_score(labels, hard_preds)
+            avg_recall = skm.balanced_accuracy_score(labels, hard_preds)
+            avg_precision = skm.precision_score(labels, hard_preds, average='macro', zero_division=0)
+            f1_score = skm.f1_score(labels, hard_preds, average='macro')
+            log_loss = skm.log_loss(labels, predictions, labels=y_info['classes'])
+
             present_classes = np.unique(labels)
             if len(present_classes) < 2:
                 auc = float("nan")
             else:
-                labels = label_binarize(labels, classes=y_info['classes'])
+                labels_bin = label_binarize(labels, classes=y_info['classes'])
                 class_indices = [i for i, c in enumerate(y_info['classes']) if c in present_classes]
-                predictions = predictions[:, class_indices]
-                labels = labels[:, class_indices]
-                auc = skm.roc_auc_score(labels, predictions, labels=present_classes, average='macro', multi_class='ovr')
-            
-            return (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC")
+                preds_sliced = predictions[:, class_indices]
+                labels_bin = labels_bin[:, class_indices]
+                auc = skm.roc_auc_score(labels_bin, preds_sliced, labels=present_classes, average='macro', multi_class='ovr')
+
+            from TALENT.model.lib.calibration import brier_score, expected_calibration_error
+            brier = brier_score(labels, predictions)
+            ece = expected_calibration_error(labels, predictions)
+
+            return (
+                (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc, brier, ece),
+                ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC", "Brier", "ECE"),
+            )
         else:
             raise ValueError("Unknown tabular task type")

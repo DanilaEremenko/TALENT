@@ -33,12 +33,7 @@ class XGBoostMethod(classical_methods):
         tic = time.time()
         self.X_train = self.N['train']
         self.model.fit(self.N['train'], self.y['train'],**fit_config)
-        if not self.is_regression:
-            y_val_pred = self.model.predict(self.N['val'])
-            self.trlog['best_res'] = accuracy_score(self.y['val'], y_val_pred)
-        else:
-            y_val_pred = self.model.predict(self.N['val'])
-            self.trlog['best_res'] = mean_squared_error(self.y['val'], y_val_pred, squared=False)*self.y_info['std']
+        self._record_best_res(self.N['val'])
         time_cost = time.time() - tic
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'wb') as f:
             pickle.dump(self.model, f)
@@ -53,9 +48,6 @@ class XGBoostMethod(classical_methods):
         tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(self.N_test)
-            # Denormalize regression predictions back to original scale
-            if self.y_info.get('policy') == 'mean_std':
-                test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)

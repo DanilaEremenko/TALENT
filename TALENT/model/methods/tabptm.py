@@ -1,7 +1,6 @@
 from TALENT.model.methods.base import Method
 import torch
 import numpy as np
-import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import time
@@ -100,10 +99,16 @@ class TabPTMMethod(Method):
             d_out=self.d_out,
             **model_config
         ).to(self.args.device)
+        # Resolve the bundled meta-trained checkpoint relative to the installed
+        # package (works from any working directory). Fall back to the historical
+        # repo-relative path when the package resource cannot be located.
+        from TALENT.model.method_registry import resolve_bundled_path
         if self.is_regression:
-            self.model.load_state_dict(torch.load('model/models/models_tabptm/metaregC-numK16-Reweight-LR0.001-maneucbra-log.pth')['params'])  
+            rel = "model/models/models_tabptm/metaregC-numK16-Reweight-LR0.001-maneucbra-log.pth"
         else:
-            self.model.load_state_dict(torch.load('model/models/models_tabptm/metaclsA-numK32-Reweight-LR0.001-maneucbra-log.pth')['params'])
+            rel = "model/models/models_tabptm/metaclsA-numK32-Reweight-LR0.001-maneucbra-log.pth"
+        ckpt_path = resolve_bundled_path(rel) or osp.join("./TALENT", rel)
+        self.model.load_state_dict(torch.load(ckpt_path)['params'])
         if self.args.use_float:
             self.model.float()
         else:
@@ -310,8 +315,8 @@ class TabPTMMethod(Method):
 
             num_per_subset = numK // num_class
             remainder = numK % num_class
-            X_meta_new = torch.zeros(batch_size, numK).cuda()
-            label_dist = torch.zeros(batch_size, numK).cuda()
+            X_meta_new = torch.zeros(batch_size, numK, device=X_meta.device)
+            label_dist = torch.zeros(batch_size, numK, device=X_meta.device)
             for i in range(num_class):
                 subset = X_meta_dist[:, i, :].topk(num_per_subset, dim=1, largest=False).values
                 start_idx = i * num_per_subset
@@ -337,9 +342,10 @@ class TabPTMMethod(Method):
 
         X_meta = torch.stack(X_meta_dist_list).permute([1, 0, 2]).unsqueeze(1).expand(-1, num_class, -1, -1)
         label = torch.stack(label_dist_list).permute([1, 0, 2]).unsqueeze(1).expand(-1, num_class, -1, -1)
-        mask_tensor = torch.ones_like(label).cuda() * -1.0
+        mask_tensor = torch.ones_like(label) * -1.0
 
-        mask_tensor[label == torch.arange(num_class).cuda().unsqueeze(0).unsqueeze(2).unsqueeze(3)] = 1.0
+        class_ids = torch.arange(num_class, device=label.device).unsqueeze(0).unsqueeze(2).unsqueeze(3)
+        mask_tensor[label == class_ids] = 1.0
         X_meta = torch.cat((X_meta,mask_tensor),dim=-1)
         return X_meta.double()
 
@@ -409,8 +415,11 @@ class TabPTMMethod(Method):
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
             
         print('epoch {}, val, loss={:.4f} {} result={:.4f}'.format(epoch, vl, task_type, vres[0]))
-        if measure(vres[0], self.trlog['best_res']) or epoch == 0:
-            self.trlog['best_res'] = vres[0]
+        from TALENT.model.lib.tuning_metric import select_objective
+        _score, _higher = select_objective(vres, metric_name, self.args, self.is_regression)
+        measure = np.greater_equal if _higher else np.less_equal
+        if measure(_score, self.trlog['best_res']) or epoch == 0:
+            self.trlog['best_res'] = _score
             self.trlog['best_epoch'] = epoch
             torch.save(
                 dict(params=self.model.state_dict()),
@@ -421,4 +430,4 @@ class TabPTMMethod(Method):
             self.val_count += 1
             if self.val_count > 20:
                 self.continue_training = False
-        torch.save(self.trlog, osp.join(self.args.save_path, 'trlog'))   
+        torch.save(self.trlog, osp.join(self.args.save_path, 'trlog'))

@@ -42,7 +42,8 @@ class LinearRegressionMethod(classical_methods):
         self.data_format(False, N, C, y)
         test_label = self.y_test
         test_logit = self.model.predict(self.N_test)
-        # Denormalize regression predictions back to original scale
+        vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        # Denormalize regression predictions back to original scale for the returned value
         if self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
@@ -51,7 +52,9 @@ class LinearRegressionMethod(classical_methods):
         ) if do_eval_stats else None
         return vres, metric_name, test_logit
     
-    def metric(self, predictions, labels, y_info):
+    def metric(self, predictions, labels, y_info, threshold=None):
+        # `threshold` accepted for signature compat with base.metric();
+        # silently ignored because LinearRegression is regression-only.
         if not isinstance(labels, np.ndarray):
             labels = labels.cpu().numpy()
         if not isinstance(predictions, np.ndarray):

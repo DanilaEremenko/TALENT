@@ -1,7 +1,6 @@
 from TALENT.model.methods.base import Method
 import torch
 import numpy as np
-import torch
 import os.path as osp
 from TALENT.model.lib.ptarl.utils import (
     fit_Ptarl,
@@ -82,7 +81,9 @@ class PTARLMethod(Method):
         self.model.eval()
         self.data_format(False, N, C, y)
 
+        tic = time.time()
         test_logit,test_label = test(self.model, self.test_loader,self.args)
+        self.predict_time = time.time() - tic
             
         vl = self.criterion(torch.tensor(test_logit), torch.tensor(test_label)).item()     
 

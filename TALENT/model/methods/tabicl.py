@@ -1,7 +1,6 @@
 from TALENT.model.methods.base import Method
 import torch
 import numpy as np
-import torch
 import torch.nn.functional as F
 
 from TALENT.model.lib.data import (
@@ -12,23 +11,16 @@ from TALENT.model.lib.data import (
 )
 import time
 
-def check_softmax(logits):
-    """
-    Check if the logits are already probabilities, and if not, convert them to probabilities.
-    
-    :param logits: np.ndarray of shape (N, C) with logits
-    :return: np.ndarray of shape (N, C) with probabilities
-    """
-    # Check if any values are outside the [0, 1] range and Ensure they sum to 1
-    if np.any((logits < 0) | (logits > 1)) or (not np.allclose(logits.sum(axis=-1), 1, atol=1e-5)):
-        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))  # stabilize by subtracting max
-        return exps / np.sum(exps, axis=1, keepdims=True)
-    else:
-        return logits
-    
+from TALENT.model.utils import check_softmax
+
 class TabICLMethod(Method):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
+        # The bundled TabICL v1.1 is classifier-only — use `tabicl_v2` for regression.
+        assert is_regression is False, (
+            "TabICL v1 does not support regression. "
+            "Use --model_type tabicl_v2 (requires `pip install -U 'tabicl>=2.0.0'`)."
+        )
         assert(args.normalization == 'none')
         assert(args.cat_policy == 'indices')
         assert(args.num_policy == 'none')
@@ -53,13 +45,19 @@ class TabICLMethod(Method):
                 self.N_test,self.C_test = N_test['test'],None
             self.y_test = y_test['test']
 
-    def construct_model(self, model_config = None,cat_indices=[]):
+    def construct_model(self, model_config = None,cat_indices=None):
             from TALENT.model.lib.tabicl.classifier import TabICLClassifier
+            from TALENT.model.method_registry import resolve_bundled_path
+            # Use bundled checkpoint if present; otherwise the TabICL library
+            # auto-downloads via `model_path=None` + `allow_auto_download=True`.
+            model_path = resolve_bundled_path(
+                "model/models/models_tabicl/tabicl-classifier-v1.1-0506.ckpt"
+            )
             self.model = TabICLClassifier(
                 device=self.args.device,
                 random_state=self.args.seed,
                 checkpoint_version="tabicl-classifier-v1.1-0506.ckpt",
-                model_path="./TALENT/model/models/models_tabicl/tabicl-classifier-v1.1-0506.ckpt",
+                model_path=model_path,
                 n_estimators=32,                  # number of ensemble members
                 norm_methods=["none", "power"],   # normalization methods to try
                 feat_shuffle_method="latin",      # feature permutation strategy
@@ -93,14 +91,18 @@ class TabICLMethod(Method):
             cat_indices = [i for i in range(self.C['train'].shape[1])]
         else:
             sampled_X = self.N['train']
-        self.sampled_X = sampled_X#[:sample_size]
-        self.sampled_Y = sampled_Y# [:sample_size]
+
+        # Row cap — TabICL keeps the full train set in-context, which can OOM
+        # on big datasets. config['general']['sample_size'] override, else the
+        # registry's train_row_limit.
+        sampled_X, sampled_Y = self.subsample_train_rows(sampled_X, sampled_Y)
+        self.sampled_X = sampled_X
+        self.sampled_Y = sampled_Y
         self.construct_model(cat_indices=cat_indices)
         self.model.fit(self.sampled_X,self.sampled_Y)
         self.fit_time = 0  # general model does not require fitting
 
     def predict(self, data, info, model_name):
-        import time
         start_time = time.time()
         N,C,y = data
         self.data_format(False, N, C, y)
@@ -110,17 +112,26 @@ class TabICLMethod(Method):
             Test_X = self.C_test
         else:
             Test_X = self.N_test
-            
+
+        tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(Test_X)
         else:
             test_logit = self.model.predict_proba(Test_X)
+        self.predict_time = time.time() - tic
+
         test_logit = test_logit.astype(np.float32)
         test_label = self.y_test
-        vl = self.criterion(torch.tensor(test_logit),torch.tensor(test_label)).item()
+        if self.is_regression:
+            # Ensure shapes match for MSE loss
+            t_pred = torch.tensor(test_logit).reshape(-1)
+            t_lab = torch.tensor(test_label).reshape(-1).float()
+            vl = self.criterion(t_pred, t_lab).item()
+        else:
+            vl = self.criterion(torch.tensor(test_logit), torch.tensor(test_label)).item()
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
-        # FIX: Denormalize regression predictions
+        # FIX: Denormalize regression predictions for the returned value
         if self.is_regression and self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
 

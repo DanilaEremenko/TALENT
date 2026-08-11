@@ -15,6 +15,21 @@ import os.path as osp
 THIS_PATH = os.path.dirname(__file__)
 
 
+def check_softmax(logits):
+    """
+    Check if the logits are already probabilities, and if not, convert them to probabilities.
+
+    :param logits: np.ndarray of shape (N, C) with logits
+    :return: np.ndarray of shape (N, C) with probabilities
+    """
+    # Check if any values are outside the [0, 1] range and Ensure they sum to 1
+    if np.any((logits < 0) | (logits > 1)) or (not np.allclose(logits.sum(axis=-1), 1, atol=1e-5)):
+        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))  # stabilize by subtracting max
+        return exps / np.sum(exps, axis=1, keepdims=True)
+    else:
+        return logits
+
+
 def mkdir(path):
     """
     Create a directory if it does not exist.
@@ -280,24 +295,10 @@ def get_classical_args():
     parser = argparse.ArgumentParser()
     # basic parameters
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
+    from TALENT.model.method_registry import classical_method_names
     parser.add_argument('--model_type', type=str,
                         default=default_args['model_type'],
-                        choices=['dummy', 'LogReg', 'LinearRegression',
-                                 'xgboost', 'catboost', 'lightgbm', 'RandomForest',
-                                 'svm', 'knn', 'NCM', 'NaiveBayes', 'rfm', 'xrfm',
-
-                                 'xgboost_cl', 'xgboost_cl_n_cl_3',
-                                 'xgboost_cl_n_cl_3_clcin_km',
-                                 'xgboost_cl_n_cl_3_clcin_hie',
-                                 'xgboost_cl_n_cl_3_clcin_gmm',
-                                 'xgboost_cl_n_cl_3_clcin_spe',
-                                 'xgboost_cl_n_cl_3_clcin_birch',
-                                 'xgboost_cl_n_cl_3_clcin_dbscan',
-
-                                 'LinearRegression_cl', 'LinearRegression_cl_n_cl_3_clcin_km',
-
-                                 'local_lr_gaussian'
-                                 ])
+                        choices=classical_method_names())
 
     # optimization parameters 
     parser.add_argument('--normalization', type=str, default=default_args['normalization'],
@@ -316,6 +317,9 @@ def get_classical_args():
 
     # other choices
     parser.add_argument('--n_trials', type=int, default=default_args['n_trials'])
+    parser.add_argument('--tune_metric', type=str, default=None,
+                        help="HPO objective metric (e.g. AUC, R2, RMSE, LogLoss). "
+                             "None keeps the legacy default (Accuracy / MAE-RMSE).")
     parser.add_argument('--seed_num', type=int, default=default_args['seed_num'])
     parser.add_argument('--gpu', default=default_args['gpu'])
     parser.add_argument('--tune', action='store_true', default=default_args['tune'])
@@ -378,20 +382,10 @@ def get_deep_args():
     with pkg_resources.files(TALENT).joinpath("configs/deep_configs.json").open("r") as f:
         default_args = json.load(f)
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
+    from TALENT.model.method_registry import deep_method_names
     parser.add_argument('--model_type', type=str, default=default_args['model_type'],
-                        choices=[
-                            'mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr',
-                            'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos',
-                            'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr',
-                            'switchtab', 'bishop', 'protogate', 'realmlp', 'mlp_plr',
-                            'excelformer', 'grande', 'amformer', 'trompt', 'tabm',
-                            't2gformer', 'tabautopnpnet',
+                        choices=deep_method_names())
 
-                            'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
-                            'tabicl', 'mitra', 'limix',
-
-                        ]
-                        )
     # optimization parameters
     parser.add_argument('--max_epoch', type=int, default=default_args['max_epoch'])
     parser.add_argument('--batch_size', type=int, default=default_args['batch_size'])
@@ -412,6 +406,9 @@ def get_deep_args():
 
     # other choices
     parser.add_argument('--n_trials', type=int, default=default_args['n_trials'])
+    parser.add_argument('--tune_metric', type=str, default=None,
+                        help="HPO objective metric (e.g. AUC, R2, RMSE, LogLoss). "
+                             "None keeps the legacy default (Accuracy / MAE-RMSE).")
     parser.add_argument('--seed_num', type=int, default=default_args['seed_num'])
     parser.add_argument('--workers', type=int, default=default_args['workers'])
     parser.add_argument('--gpu', default=default_args['gpu'])
@@ -600,7 +597,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
                 2,
                 256
             ]
-        except:
+        except KeyError:
             opt_space[args.model_type]['fit']['n_bins'] = [
                 "int",
                 2,
@@ -610,8 +607,12 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
             config, sample_parameters(trial, opt_space[args.model_type], config)
         )
         if args.model_type == 'xgboost' and torch.cuda.is_available():
-            config['model']['tree_method'] = 'gpu_hist'
-            config['model']['gpu_id'] = args.gpu
+            # XGBoost >= 2.0 GPU API: tree_method='hist' + device='cuda'.
+            # The legacy 'gpu_hist' / 'gpu_id' form was deprecated in 2.0 and
+            # removed in 3.0, so we use the modern form to stay compatible
+            # across the supported XGBoost range.
+            config['model']['tree_method'] = 'hist'
+            config['model']['device'] = 'cuda'
             config['fit']["verbose"] = False
         elif args.model_type == 'catboost' and torch.cuda.is_available():
             config['fit']["logging_level"] = "Silent"
@@ -743,15 +744,17 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
             args.config = json.load(fp)
         return args, None
     else:
-        # get data property
-        if info['task_type'] == 'regression':
-            direction = 'minimize'
+        # get data property. The optimization direction follows the configured
+        # tune_metric (defaults to minimize for regression / maximize for
+        # classification when tune_metric is unset).
+        from TALENT.model.lib.tuning_metric import study_direction
+        is_reg = info['task_type'] == 'regression'
+        direction = study_direction(args, is_reg)
+        if is_reg:
             for key in opt_space[args.model_type]['model'].keys():
                 if 'dropout' in key and '?' not in opt_space[args.model_type]['model'][key][0]:
                     opt_space[args.model_type]['model'][key][0] = '?' + opt_space[args.model_type]['model'][key][0]
                     opt_space[args.model_type]['model'][key].insert(1, 0.0)
-        else:
-            direction = 'maximize'
 
         # set_seeds(args.seed)
         method = get_method(args.model_type)(args, info['task_type'] == 'regression')
@@ -784,168 +787,12 @@ def get_method(model):
 
     :model: str, model name
     :return: class, method class
+
+    Implementation: delegates to the unified registry in
+    ``TALENT.model.method_registry`` (single source of truth).
     """
-
-    # Deep methods
-
-    if model == "mlp":
-        from TALENT.model.methods.mlp import MLPMethod
-        return MLPMethod
-    elif model == 'resnet':
-        from TALENT.model.methods.resnet import ResNetMethod
-        return ResNetMethod
-    elif model == 'autoint':
-        from TALENT.model.methods.autoint import AutoIntMethod
-        return AutoIntMethod
-    elif model == 'snn':
-        from TALENT.model.methods.snn import SNNMethod
-        return SNNMethod
-    elif model == 'ftt':
-        from TALENT.model.methods.ftt import FTTMethod
-        return FTTMethod
-    elif model == 'dcn2':
-        from TALENT.model.methods.dcn2 import DCN2Method
-        return DCN2Method
-    elif model == 'tabr':
-        from TALENT.model.methods.tabr import TabRMethod
-        return TabRMethod
-    elif model == 'modernNCA':
-        from TALENT.model.methods.modernNCA import ModernNCAMethod
-        return ModernNCAMethod
-    elif model == 'tabnet':
-        from TALENT.model.methods.tabnet import TabNetMethod
-        return TabNetMethod
-    elif model == 'node':
-        from TALENT.model.methods.node import NodeMethod
-        return NodeMethod
-    elif model == 'tabcaps':
-        from TALENT.model.methods.tabcaps import TabCapsMethod
-        return TabCapsMethod
-    elif model == 'saint':
-        from TALENT.model.methods.saint import SaintMethod
-        return SaintMethod
-    elif model == 'tangos':
-        from TALENT.model.methods.tangos import TangosMethod
-        return TangosMethod
-    elif model == 'ptarl':
-        from TALENT.model.methods.ptarl import PTARLMethod
-        return PTARLMethod
-    elif model == 'danets':
-        from TALENT.model.methods.danets import DANetsMethod
-        return DANetsMethod
-    elif model == 'tabtransformer':
-        from TALENT.model.methods.tabtransformer import TabTransformerMethod
-        return TabTransformerMethod
-    elif model == 'grownet':
-        from TALENT.model.methods.grownet import GrowNetMethod
-        return GrowNetMethod
-    elif model == 'dnnr':
-        from TALENT.model.methods.dnnr import DNNRMethod
-        return DNNRMethod
-    elif model == 'switchtab':
-        from TALENT.model.methods.switchtab import SwitchTabMethod
-        return SwitchTabMethod
-    elif model == 'bishop':
-        from TALENT.model.methods.bishop import BiSHopMethod
-        return BiSHopMethod
-    elif model == 'protogate':
-        from TALENT.model.methods.protogate import ProtoGateMethod
-        return ProtoGateMethod
-    elif model == 'realmlp':
-        from TALENT.model.methods.realmlp import RealMLPMethod
-        return RealMLPMethod
-    elif model == 'mlp_plr':
-        from TALENT.model.methods.mlp_plr import MLP_PLRMethod
-        return MLP_PLRMethod
-    elif model == 'excelformer':
-        from TALENT.model.methods.excelformer import ExcelFormerMethod
-        return ExcelFormerMethod
-    elif model == 'grande':
-        from TALENT.model.methods.grande import GRANDEMethod
-        return GRANDEMethod
-    elif model == 'amformer':
-        from TALENT.model.methods.amformer import AMFormerMethod
-        return AMFormerMethod
-    elif model == 'trompt':
-        from TALENT.model.methods.trompt import TromptMethod
-        return TromptMethod
-    elif model == 'tabm':
-        from TALENT.model.methods.tabm import TabMMethod
-        return TabMMethod
-    elif model == 't2gformer':
-        from TALENT.model.methods.t2gformer import T2GFormerMethod
-        return T2GFormerMethod
-    elif model == 'tabautopnpnet':
-        from TALENT.model.methods.tabautopnpnet import TabAutoPNPNetMethod
-        return TabAutoPNPNetMethod
-
-    # Classical methods
-
-    elif model == 'dummy':
-        from TALENT.model.classical_methods.dummy import DummyMethod
-        return DummyMethod
-    elif model == 'LogReg':
-        from TALENT.model.classical_methods.logreg import LogRegMethod
-        return LogRegMethod
-    elif model == 'LinearRegression':
-        from TALENT.model.classical_methods.lr import LinearRegressionMethod
-        return LinearRegressionMethod
-    elif model == 'xgboost':
-        from TALENT.model.classical_methods.xgboost import XGBoostMethod
-        return XGBoostMethod
-    elif model == 'catboost':
-        from TALENT.model.classical_methods.catboost import CatBoostMethod
-        return CatBoostMethod
-    elif model == 'lightgbm':
-        from TALENT.model.classical_methods.lightgbm import LightGBMMethod
-        return LightGBMMethod
-    elif model == 'RandomForest':
-        from TALENT.model.classical_methods.randomforest import RandomForestMethod
-        return RandomForestMethod
-    elif model == 'svm':
-        from TALENT.model.classical_methods.svm import SvmMethod
-        return SvmMethod
-    elif model == 'knn':
-        from TALENT.model.classical_methods.knn import KnnMethod
-        return KnnMethod
-    elif model == 'NCM':
-        from TALENT.model.classical_methods.ncm import NCMMethod
-        return NCMMethod
-    elif model == 'NaiveBayes':
-        from TALENT.model.classical_methods.naivebayes import NaiveBayesMethod
-        return NaiveBayesMethod
-    elif model == 'rfm':
-        from TALENT.model.classical_methods.rfm import RFMMethod
-        return RFMMethod
-    elif model == 'xrfm':
-        from TALENT.model.classical_methods.xrfm import XRFMMethod
-        return XRFMMethod
-
-    # General methods
-
-    elif model == 'tabpfn':
-        from TALENT.model.methods.tabpfn import TabPFNMethod
-        return TabPFNMethod
-    elif model == 'tabpfn_v2':
-        from TALENT.model.methods.tabpfn_v2 import TabPFNMethod
-        return TabPFNMethod
-    elif model == 'tabpfn_real':
-        from TALENT.model.methods.tabpfn_real import TabPFNRealMethod
-        return TabPFNRealMethod
-    elif model == 'hyperfast':
-        from TALENT.model.methods.hyperfast import HyperFastMethod
-        return HyperFastMethod
-    elif model == 'tabptm':
-        from TALENT.model.methods.tabptm import TabPTMMethod
-        return TabPTMMethod
-    elif model == 'tabicl':
-        from TALENT.model.methods.tabicl import TabICLMethod
-        return TabICLMethod
-    elif model == 'mitra':
-        from TALENT.model.methods.mitra import MitraMethod
-        return MitraMethod
-    elif model == 'limix':
-        from TALENT.model.methods.limix import LimiXMethod
-        return LimiXMethod
-    else:
-        raise NotImplementedError("Model \"" + model + "\" not yet implemented")
+    from TALENT.model.method_registry import get_method_class
+    try:
+        return get_method_class(model)
+    except KeyError as e:
+        raise NotImplementedError(str(e)) from None

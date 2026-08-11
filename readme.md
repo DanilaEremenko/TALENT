@@ -73,16 +73,6 @@ Welcome to **TALENT**, a benchmark with a comprehensive machine learning toolbox
   pages   = {1--16},
   url     = {http://jmlr.org/papers/v26/25-0512.html}
 }
-
-@article{liu2024talenttabularanalyticslearning,
-         title={TALENT: A Tabular Analytics and Learning Toolbox}, 
-         author={Si-Yang Liu and 
-         		 Hao-Run Cai and 
-         		 Qi-Le Zhou and 
-         		 Han-Jia Ye},
-         journal={arXiv preprint arXiv:2407.04057},
-         year={2024}
-}
 ```
 
 
@@ -90,6 +80,11 @@ Welcome to **TALENT**, a benchmark with a comprehensive machine learning toolbox
 
 ## 📰 What's New
 
+- [2026-07]🌟 Add **[TabFM](https://github.com/google-research/tabfm)** (Google Research, zero-shot tabular foundation model) as an optional method via `pip install -U "tabfm[pytorch]"`.
+- [2026-06]🌟 Add **[TabPFN v2.5](https://arxiv.org/abs/2511.08667)** (PriorLabs, Nov 2025) and **[TabDPT](https://github.com/layer6ai-labs/TabDPT-inference)** (Layer 6 AI, ICL + retrieval). TALENT now ships the full TabPFN family (v1, v2, v2.5, v3) plus TabDPT alongside the other tabular foundation models.
+- [2026-06]🌟 Evaluation improvements: **calibration metrics** (Brier, ECE) are now reported by default for every classifier, **decision thresholds** are tuned on the validation set for binary classification (used for Accuracy/F1/Precision/Recall; threshold-independent metrics like AUC/LogLoss/Brier/ECE are unaffected), and `RunResult` exposes a uniform `predict_proba`/`predict_labels` interface regardless of whether the underlying method natively returns logits or probabilities. Bundled checkpoints are now resolved via `importlib.resources` so methods work from any working directory.
+- [2026-05]🌟 Add [TabPFN v3](https://github.com/PriorLabs/TabPFN) (PriorLabs 2026) and [TabICL v2](https://github.com/soda-inria/tabicl) (ICML 2026, regression support added).
+- [2026-03]🌟 We have updated the TALENT-extension datasets and results. [Link](https://box.nju.edu.cn/d/b7b23a19ee054aaba7b6/?p=%2F&mode=list)
 - [2025-11]🌟 Add [RFM](https://www.science.org/doi/10.1126/science.adi5639) (Science).
 - [2025-11]🌟 Add [Real-TabPFN](https://arxiv.org/abs/2507.03971).
 - [2025-11]🌟 Add [LimiX](https://arxiv.org/abs/2509.03505).
@@ -161,6 +156,11 @@ TALENT integrates an extensive array of 30+ deep learning architectures for tabu
 38. **[Real-TabPFN](https://arxiv.org/abs/2507.03971)**: An enhanced tabular foundation model that extends TabPFNv2 through continued pre-training on real-world datasets for classification tasks. 
 39. **[RFM](https://www.science.org/doi/10.1126/science.adi5639)**: A non-deep, backpropagation-free feature learning algorithm, iteratively applies AGOP to a kernel machine to adaptively learn task-specific features.
 40. **[xRFM](https://arxiv.org/abs/2508.10053)**: A tabular model that combines RFMs with an adaptive tree structure, enabling it to learn features local to data subsets and scale log-linearly with the number of samples.
+41. **[TabPFN v3](https://github.com/PriorLabs/TabPFN)**: TabPFN v3 (PriorLabs 2026), with native context up to ~1M rows × 200 features, 160-class support, and an optional thinking mode. Requires `pip install -U 'tabpfn>=8.0.0'`.
+42. **[TabICL v2](https://github.com/soda-inria/tabicl)**: TabICL v2 (ICML 2026), now supporting both classification and regression (via `TabICLRegressor`), with native quantile regression. Requires `pip install -U 'tabicl>=2.0.0'`.
+43. **[TabPFN v2.5](https://arxiv.org/abs/2511.08667)**: TabPFN v2.5 (PriorLabs, Nov 2025), the intermediate release between v2 and v3. Scales in-context learning to ~50k rows × 2k features. Requires `pip install -U 'tabpfn>=8.0.0'`.
+44. **[TabDPT](https://github.com/layer6ai-labs/TabDPT-inference)**: A tabular foundation model from Layer 6 AI that combines in-context learning with retrieval and self-supervised pre-training on real data, removing fixed context-size limits. Requires `pip install -U tabdpt`.
+45. **[TabFM](https://github.com/google-research/tabfm)**: Google's zero-shot tabular foundation model for classification and regression, using in-context learning over training rows as context. Requires `pip install -U "tabfm[pytorch]"`; the upstream model weights use the TabFM Non-Commercial License.
 
 
 🔧 If you want to check the **default hyperparameters and hyperparameter search spaces** of all methods, please visit:  
@@ -179,29 +179,39 @@ $ pip install git+https://github.com/LAMDA-Tabular/TALENT.git@main --upgrade
 Try a demo `train_model_deep.py` :
 
 ```python
-
 from tqdm import tqdm
-from TALENT.model.utils import get_deep_args,show_results,tune_hyper_parameters,get_method,set_seeds
+from TALENT.model.utils import get_deep_args, show_results, tune_hyper_parameters, get_method, set_seeds
 from TALENT.model.lib.data import get_dataset
+from TALENT.model.lib.evaluation import evaluate
+from TALENT.model.method_registry import get_method_spec
 
 if __name__ == '__main__':
     loss_list, results_list, time_list = [], [], []
-    args,default_para,opt_space = get_deep_args()
-    train_val_data,test_data,info = get_dataset(args.dataset,args.dataset_path)
+    args, default_para, opt_space = get_deep_args()
+    train_val_data, test_data, info = get_dataset(args.dataset, args.dataset_path)
     if args.tune:
-        args = tune_hyper_parameters(args,opt_space,train_val_data,info)
+        args = tune_hyper_parameters(args, opt_space, train_val_data, info)
+
+    spec = get_method_spec(args.model_type)
     for seed in tqdm(range(args.seed_num)):
-        args.seed = seed    # update seed  
+        args.seed = seed    # update seed
         set_seeds(args.seed)
         method = get_method(args.model_type)(args, info['task_type'] == 'regression')
-        time_cost = method.fit(train_val_data, info)    
-        vl, vres, metric_name, predict_logits = method.predict(test_data, info, model_name=args.evaluate_option)
-	    loss_list.append(vl)
-        results_list.append(vres)
-        time_list.append(time_cost)
+        method.fit(train_val_data, info)
+        # evaluate() standardizes predict_proba and (for binary tasks) tunes
+        # the decision threshold on the validation split.
+        eval_result = evaluate(
+            method, train_val_data, test_data, info,
+            model_name=args.evaluate_option,
+            output_type=spec.output_type,
+            tune_threshold=True,
+        )
+        loss_list.append(eval_result["loss"])
+        results_list.append(eval_result["metrics"])
+        metric_name = eval_result["metric_names"]
+        time_list.append((method.fit_time, method.predict_time))
 
-    show_results(args,info, metric_name,loss_list,results_list,time_list)
-
+    show_results(args, info, metric_name, loss_list, results_list, time_list)
 ```
 
 
@@ -209,6 +219,70 @@ if __name__ == '__main__':
 ```bash
 python train_model_deep.py --model_type MODEL_NAME
 ```
+
+### 🐍 Python API (library mode)
+
+TALENT also exposes a library-style API alongside the CLI scripts, so you can call methods directly from Python or a Jupyter notebook without manipulating `sys.argv`:
+
+```python
+import TALENT
+from TALENT.model.lib.data import get_dataset
+
+train_val, test, info = get_dataset("your_dataset", "./data")
+
+# Single-seed run
+result = TALENT.run("tabpfn_v3", train_val, test, info)
+print(dict(zip(result.metric_names, result.metrics)))
+print("Fit time:", result.fit_time, "Predict time:", result.predict_time)
+
+# Multi-seed run with hyperparameter tuning
+result = TALENT.run("catboost", train_val, test, info, tune=True, n_trials=50, seed_num=3)
+print("Mean metrics:", dict(zip(result.metric_names, result.metrics_mean)))
+print("Std metrics:",  dict(zip(result.metric_names, result.metrics_std)))
+```
+
+#### Choosing the HPO objective metric
+
+By default the hyperparameter search optimizes TALENT's historical objective
+(validation **Accuracy** for classification, **MAE / RMSE** for regression).
+Pass `tune_metric` to optimize any metric that `Method.metric` reports instead;
+the optimization direction is inferred automatically.
+
+```python
+# Tune on ROC-AUC (classification) or R2 (regression) rather than the default
+result = TALENT.run("catboost", train_val, test, info,
+                    tune=True, n_trials=50, tune_metric="AUC")
+
+from TALENT.model.lib.tuning_metric import supported_tune_metrics
+print(supported_tune_metrics())
+# ('Accuracy', 'Avg_Recall', 'Avg_Precision', 'F1', 'AUC',
+#  'LogLoss', 'Brier', 'ECE', 'R2', 'MAE', 'RMSE')
+```
+
+`tune_metric` is also exposed on the CLI (`--tune_metric AUC`). It defaults to
+`None`, which preserves the previous behavior exactly. A few methods optimize an
+internal training loss and do not accept it (`tabnet`, `ptarl`, `tabcaps`); use
+the default for those.
+
+Introspect or filter methods via the unified registry:
+
+```python
+# What does this method need?
+spec = TALENT.get_method_spec("tabicl_v2")
+print(spec.cat_policy, spec.normalization, spec.supports_regression, spec.supports_hpo)
+
+# List all GPU-only deep methods that support regression
+for s in TALENT.list_methods(
+    architecture=TALENT.Architecture.DEEP,
+    hardware=TALENT.Hardware.GPU,
+    supports_regression=True,
+):
+    print(s.name)
+```
+
+Both the CLI scripts and the Python API are backed by the same `MethodSpec` registry, so adding a new method requires only a single registry entry (see `TALENT/model/method_registry.py`).
+
+The registry is also the single source of truth for foundation-model training-row caps (`train_row_limit`): TabPFN 1k, TabPFN v2 / Real-TabPFN / Mitra 10k, TabPFN v2.5 50k, TabICL 500k, TabPFN v3 / TabICL v2 1M, TabDPT / TabFM no registry cap. The cap is applied automatically when fitting; setting `config['general']['sample_size']` overrides it for a single run.
 
 
 
@@ -244,7 +318,7 @@ For methods like the MLP class that only need to design the model, you only need
 
 - Add the model class in `model/models`.
 - Inherit from `model/methods/base.py` and override the `construct_model()` method in the new class.
-- Add the method name in the `get_method` function in `model/utils.py`.
+- Register the method in the unified registry `model/method_registry.py` by appending a `MethodSpec(...)` entry. The CLI argparse `choices` and `get_method()` are both derived from this registry, so no other dispatcher edits are needed.
 - Add the parameter settings for the new method in `configs/default/[MODEL_NAME].json` and `configs/opt_space/[MODEL_NAME].json`.
 
 For other methods that require changing the training process, partially override functions based on `model/methods/base.py`. For details, refer to the implementation of other methods in `model/methods/`.
@@ -352,6 +426,8 @@ We thank the following repos for providing helpful components/functions in our w
 - [TabAutoPNPNet](https://github.com/matteo-rizzo/periodic-tabular-dl)
 - [LimiX](https://github.com/limix-ldm/LimiX)
 - [xRFM](https://github.com/dmbeaglehole/xRFM)
+- [TabDPT](https://github.com/layer6ai-labs/TabDPT-inference)
+- [TabFM](https://github.com/google-research/tabfm)
 
 ## 🤗 Contact
 

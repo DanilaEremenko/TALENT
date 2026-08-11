@@ -1,6 +1,5 @@
 from TALENT.model.methods.base import Method
 import torch
-import torch
 import torch.nn.functional as F
 
 from TALENT.model.lib.data import (
@@ -100,7 +99,7 @@ class TabNetMethod(Method):
             eval_metric=eval_metric,
             max_epochs=self.args.max_epoch, patience=20,
             batch_size=self.args.batch_size, virtual_batch_size=256,
-            device=f'cuda:0',
+            device=str(self.args.device),
             task=task
         )
         self.fit_time = time.time() - tic
@@ -117,7 +116,9 @@ class TabNetMethod(Method):
         tic = time.time()
         if self.is_regression:
             task_type = "regression"
-            test_logit = self.model.predict(self.N_test)
+            # TabNetRegressor returns (N, 1); flatten so the MSE loss below
+            # does not broadcast against the (N,) labels.
+            test_logit = self.model.predict(self.N_test).reshape(-1)
         else:
             task_type = "classification"
             test_logit = self.model.predict_proba(self.N_test)

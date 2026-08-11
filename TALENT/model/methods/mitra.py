@@ -1,7 +1,6 @@
 from TALENT.model.methods.base import Method
 import torch
 import numpy as np
-import torch
 import torch.nn.functional as F
 
 from TALENT.model.lib.data import (
@@ -44,10 +43,14 @@ class MitraMethod(Method):
 
     def construct_model(self, model_config = None):
         from TALENT.model.models.mitra import Mitra
-        if self.is_regression:
-            model_path = "./TALENT/model/models/models_mitra/reg/"
-        else:
-            model_path = "./TALENT/model/models/models_mitra/cls/"
+        from TALENT.model.method_registry import resolve_bundled_path
+        subdir = "reg" if self.is_regression else "cls"
+        # Resolve via importlib.resources so the package works from any CWD.
+        model_path = resolve_bundled_path(f"model/models/models_mitra/{subdir}/")
+        if model_path is None:
+            # Fall back to the legacy relative path -- preserves prior
+            # behaviour when running from the repository root.
+            model_path = f"./TALENT/model/models/models_mitra/{subdir}/"
         self.model = Mitra.from_pretrained(
             path=model_path,
             device="cpu"  # safe tensor initialization on CPU
@@ -70,6 +73,10 @@ class MitraMethod(Method):
         else:
             x_support = self.N['train']
         
+        # Row cap: config['general']['sample_size'] override, else the
+        # registry's train_row_limit (Mitra attends over the full support set).
+        x_support, y_support = self.subsample_train_rows(x_support, y_support)
+
         x_support = x_support.astype(np.float32)
         y_support = y_support.astype(np.float32 if self.is_regression else np.int64)
 
@@ -98,8 +105,9 @@ class MitraMethod(Method):
         n_obs_query = x_query.shape[0]
         n_feat = self.x_support.shape[1]
         
-        max_samples_support = self.args.config['general']['max_samples_support']
-        max_samples_query = self.args.config['general']['max_samples_query']
+        general = self.args.config.get('general', {}) or {}
+        max_samples_support = general.get('max_samples_support', 8192)
+        max_samples_query = general.get('max_samples_query', 1024)
 
         if n_obs_support > max_samples_support:
             idx = torch.randperm(n_obs_support)[:max_samples_support] 
@@ -107,6 +115,7 @@ class MitraMethod(Method):
             self.y_support = self.y_support[idx]
             n_obs_support = max_samples_support
         
+        tic = time.time()
         results = []
         self.model.eval()
         with torch.no_grad():
@@ -135,6 +144,7 @@ class MitraMethod(Method):
                 ) # [1, batch_n_query, n_classes]
 
                 results.append(test_logit.squeeze(0))
+        self.predict_time = time.time() - tic
 
         test_logit = torch.cat(results, dim=0).cpu()
         if not self.is_regression:

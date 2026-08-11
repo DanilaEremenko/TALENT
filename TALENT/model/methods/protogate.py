@@ -38,6 +38,10 @@ class ProtoGateMethod(Method):
             self.model.float()
         else:
             self.model.double()
+
+    def _probability_loss(self, predictions, labels):
+        predictions = predictions.clamp_min(1e-12)
+        return F.nll_loss(torch.log(predictions), labels)
     
     def fit(self, data, info, train = True, config = None):
         # if the method already fit the dataset, skip these steps (such as the hyper-tune process)
@@ -49,15 +53,18 @@ class ProtoGateMethod(Method):
         if config is not None:
             self.reset_stats_withconfig(config)
         self.data_format(is_train = True)
-        self.X_train = self.N['train'] 
-        self.y_neighbour = torch.tensor(self.y['train'])
+        self.X_train = self.N['train']
+        self.y_neighbour = self.y['train'].detach().clone()
         self.construct_model()
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(), 
             lr=self.args.config['training']['lr'], 
             weight_decay=self.args.config['training']['weight_decay']
         )
-        self.feature_selection = self.args.config['model']['feature_selection'] if 'feature_selection' in self.args.config['training'].items() else True
+        # Note: `in dict.items()` would always be False (items are key-value
+        # tuples), so the config value was never read; the key lives in
+        # config['training'] (see utils.py default_para handling).
+        self.feature_selection = self.args.config['training'].get('feature_selection', True)
         self.pred_k = self.args.config['training']['pred_k']
         self.lam = self.args.config['training']['lam']
         self.sigma = self.args.config['model']['sigma']
@@ -106,7 +113,7 @@ class ProtoGateMethod(Method):
                     X_num, X_cat = X, None  
                         
                 x_selected, self.alpha, self.stochastic_gate = self.model(X_num)
-                x_neighbour_selected, _, _ = self.model(torch.tensor(self.X_train).to(x_selected.device))
+                x_neighbour_selected, _, _ = self.model(self.X_train.detach().clone().to(x_selected.device))
                 y_neighbour = self.y_neighbour.to(x_selected.device)
                 y_neighbour = F.one_hot(y_neighbour, num_classes=self.d_out)
 
@@ -118,8 +125,8 @@ class ProtoGateMethod(Method):
         
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
-        
-        vl = 1.0   
+
+        vl = self._probability_loss(test_logit, test_label).item()
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
         print('Test: loss={:.4f}'.format(vl))
@@ -177,7 +184,7 @@ class ProtoGateMethod(Method):
                 else:
                     X_num, X_cat = X, None                            
                 x_selected, self.alpha, self.stochastic_gate = self.model(X_num)
-                x_neighbour_selected, _, _ = self.model(torch.tensor(self.X_train).to(x_selected.device))
+                x_neighbour_selected, _, _ = self.model(self.X_train.detach().clone().to(x_selected.device))
                 y_neighbour = self.y_neighbour.to(x_selected.device)
                 y_neighbour = F.one_hot(y_neighbour, num_classes=self.d_out)
 
@@ -201,8 +208,11 @@ class ProtoGateMethod(Method):
 
 
         print('epoch {}, val, {} result={:.4f}'.format(epoch,  task_type, vres[0]))
-        if measure(vres[0], self.trlog['best_res']) or epoch == 0:
-            self.trlog['best_res'] = vres[0]
+        from TALENT.model.lib.tuning_metric import select_objective
+        _score, _higher = select_objective(vres, metric_name, self.args, self.is_regression)
+        measure = np.greater_equal if _higher else np.less_equal
+        if measure(_score, self.trlog['best_res']) or epoch == 0:
+            self.trlog['best_res'] = _score
             self.trlog['best_epoch'] = epoch
             torch.save(
                 dict(params=self.model.state_dict()),
@@ -215,31 +225,8 @@ class ProtoGateMethod(Method):
                 self.continue_training = False
         torch.save(self.trlog, osp.join(self.args.save_path, 'trlog'))   
 
-    def metric(self, predictions, labels, y_info):
-        if not isinstance(labels, np.ndarray):
-            labels = labels.cpu().numpy()
-        if not isinstance(predictions, np.ndarray):
-            predictions = predictions.cpu().numpy()
-        if self.is_regression:
-            mae = skm.mean_absolute_error(labels, predictions)
-            rmse = skm.mean_squared_error(labels, predictions) ** 0.5
-            r2 = skm.r2_score(labels, predictions)
-            if y_info['policy'] == 'mean_std':
-                mae *= y_info['std']
-                rmse *= y_info['std']
-            return (mae,r2,rmse), ("MAE", "R2", "RMSE")
-        elif self.is_binclass:
-            accuracy = skm.accuracy_score(labels, predictions)
-            avg_recall = skm.balanced_accuracy_score(labels, predictions)
-            avg_precision = skm.precision_score(labels, predictions, average='macro')
-            f1_score = skm.f1_score(labels, predictions, average='binary')
-            return (accuracy, avg_recall, avg_precision, f1_score), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1")
-        elif self.is_multiclass:
-            accuracy = skm.accuracy_score(labels, predictions)
-            avg_recall = skm.balanced_accuracy_score(labels, predictions)
-            avg_precision = skm.precision_score(labels, predictions, average='macro')
-            f1_score = skm.f1_score(labels, predictions, average='macro')
-            return (accuracy, avg_recall, avg_precision, f1_score), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1")
+    def metric(self, predictions, labels, y_info, threshold=None):
+        return super().metric(predictions, labels, y_info, threshold=threshold)
         
         
     def compute_pred_loss(self, x_query, x_cand, y_query, y_neighbor):
@@ -302,7 +289,7 @@ def proto_predict(query, neighbors, neighbor_labels, k):
     norms = torch.norm(diffs, p=2, dim=-1)
     indices = torch.argsort(norms, dim=-1).to(neighbor_labels.device)
     labels = neighbor_labels[indices[:, :k]]  # n x k x num_classes
-    label_counts = labels.sum(dim=1)  # n x num_classes
-    prediction = torch.argmax(label_counts, dim=1)  # n
+    label_counts = labels.sum(dim=1).float()  # n x num_classes
+    prediction = label_counts / float(k)
 
     return prediction, indices[:, :k]

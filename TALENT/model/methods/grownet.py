@@ -3,7 +3,6 @@ import argparse
 import torch
 from tqdm import tqdm
 import numpy as np
-import torch
 
 from TALENT.model.lib.data import (
     Dataset
@@ -88,7 +87,10 @@ class GrowNetMethod(Method):
                     middle_feat, out = self.model.forward(X_num, X_cat)
                     out = torch.as_tensor(out, dtype=torch.float64).cuda().view(-1, 1)
                     if self.is_regression:
-                        grad_direction = -(out - y)
+                        # y is (B,) while out is (B,1): without the view the
+                        # subtraction broadcasts to (B,B) and the MSE below is
+                        # computed over wrong sample pairs.
+                        grad_direction = -(out - y.view(-1, 1))
                         _, out = m(self.model.embed_input(X_num, X_cat), middle_feat)
                         out = torch.as_tensor(out, dtype=torch.float64).cuda().view(-1, 1)
                         loss = self.loss_f1(self.model.boost_rate * out, grad_direction)
@@ -175,8 +177,11 @@ class GrowNetMethod(Method):
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
         print('epoch {}, val, loss={:.4f} {} result={:.4f}'.format(epoch, vl, task_type, vres[0]))
-        if measure(vres[0], self.trlog['best_res']) or epoch == 0:
-            self.trlog['best_res'] = vres[0]
+        from TALENT.model.lib.tuning_metric import select_objective
+        _score, _higher = select_objective(vres, metric_name, self.args, self.is_regression)
+        measure = np.greater_equal if _higher else np.less_equal
+        if measure(_score, self.trlog['best_res']) or epoch == 0:
+            self.trlog['best_res'] = _score
             self.trlog['best_epoch'] = epoch
             self.model.to_file(self.args.save_path + "/final-{}.pt".format(str(self.args.seed)))
             self.val_count = 0
@@ -199,6 +204,7 @@ class GrowNetMethod(Method):
             self.model.to_double()
         self.data_format(False, N, C, y)
 
+        tic = time.time()
         test_logit, test_label = [], []
         with torch.no_grad():
             for i, (X, y) in tqdm(enumerate(self.test_loader)):
@@ -207,13 +213,14 @@ class GrowNetMethod(Method):
                 elif self.C is not None and self.N is None:
                     X_num, X_cat = None, X
                 else:
-                    X_num, X_cat = X, None  
-                            
+                    X_num, X_cat = X, None
+
                 _,pred = self.model.forward(X_num,X_cat)
 
                 test_logit.append(pred)
                 test_label.append(y)
-                    
+        self.predict_time = time.time() - tic
+
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
             

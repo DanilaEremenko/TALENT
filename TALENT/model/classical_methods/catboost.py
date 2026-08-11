@@ -10,6 +10,7 @@ from TALENT.model.utils import (
 )
 import numpy as np
 import time
+import torch
 from sklearn.metrics import accuracy_score, mean_squared_error
 
 from utils_xai_local.shap import explain_catboost
@@ -105,9 +106,6 @@ class CatBoostMethod(classical_methods):
         tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(test_data)
-            #Denormalize regression predictions back to original scale
-            if self.y_info.get('policy') == 'mean_std':
-                test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         else:
             test_logit = self.model.predict_proba(test_data)
 
@@ -123,4 +121,7 @@ class CatBoostMethod(classical_methods):
             predict_time=time.time() - tic
         ) if do_eval_stats else None
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        # Denormalize regression predictions back to original scale for the returned value
+        if self.is_regression and self.y_info.get('policy') == 'mean_std':
+            test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         return vres, metric_name, test_logit

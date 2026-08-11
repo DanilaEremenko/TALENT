@@ -122,7 +122,8 @@ class RealMLPMethod(Method):
         test_label = torch.from_numpy(test_label)
         
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.trlog['best_res'] = vres[0]
+        from TALENT.model.lib.tuning_metric import select_objective
+        self.trlog['best_res'], _ = select_objective(vres, metric_name, self.args, self.is_regression)
 
 
     def predict(self, data, info, model_name):
@@ -141,7 +142,9 @@ class RealMLPMethod(Method):
             assert self.C_test is not None and self.N_test is not None
             X_test = np.concatenate((np.array(self.C_test), np.array(self.N_test)), axis=1)
 
+        tic = time.time()
         test_logit = self.model.predict(X_test)
+        self.predict_time = time.time() - tic
         test_label = self.y_test
         
         test_logit = torch.from_numpy(test_logit)

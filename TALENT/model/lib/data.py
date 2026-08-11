@@ -164,7 +164,6 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
     if C_data is None:
         C = None
     else:
-        assert(cat_nan_policy == 'new')
         C = deepcopy(C_data)
         if 'train' in C_data.keys():
             if C['train'].ndim == 1:
@@ -175,26 +174,26 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
         C = {k: v.astype(str) for k,v in C.items()}
         
         # assume the cat nan condition
-        cat_nan_masks = {k: np.isnan(v) if np.issubdtype(v.dtype, np.number) else np.isin(v, ['nan', 'NaN', '', None]) for k, v in C.items()}
+        cat_nan_masks = {k: np.isnan(v) if np.issubdtype(v.dtype, np.number) else np.isin(v, ['nan', 'NaN', '', 'None', None]) for k, v in C.items()}
         if cat_nan_policy == 'new':
             if cat_new_value is None:
                 cat_new_value = '___null___'
                 imputer = None
-        elif cat_nan_policy == 'most_frequent':
-            if imputer is None:
-                cat_new_value = None
-                imputer = SimpleImputer(strategy='most_frequent') 
-                imputer.fit(C['train'])
-        else:
-            raise_unknown('categorical NaN policy', cat_nan_policy)
-        
-        if any(x.any() for x in cat_nan_masks.values()):
-            if imputer:
-                C = {k: imputer.transform(v) for k, v in C.items()}
-            else:
+            if any(x.any() for x in cat_nan_masks.values()):
                 for k, v in C.items():
                     cat_nan_indices = np.where(cat_nan_masks[k])
                     v[cat_nan_indices] = cat_new_value
+        elif cat_nan_policy == 'most_frequent':
+            cat_new_value = None
+            C_for_imputer = {k: v.astype(object) for k, v in C.items()}
+            for k, v in C_for_imputer.items():
+                v[cat_nan_masks[k]] = np.nan
+            if imputer is None:
+                imputer = SimpleImputer(strategy='most_frequent') 
+                imputer.fit(C_for_imputer['train'])
+            C = {k: imputer.transform(v) for k, v in C_for_imputer.items()}
+        else:
+            raise_unknown('categorical NaN policy', cat_nan_policy)
         
     result = (N, C, num_new_value, imputer, cat_new_value)
     return result
@@ -321,9 +320,10 @@ def data_enc_process(N_data, C_data, cat_policy, y_train = None, ord_encoder = N
             for column_idx in range(C_data['test'].shape[1]):
                 C_data['test'][:, column_idx][C_data['test'][:, column_idx] == unknown_value] = mode_values[column_idx]
         elif 'val' in C_data.keys():
-            mode_values = [np.argmax(np.bincount(column[column != unknown_value]))
-                        if np.any(column == unknown_value) else column[0]
-                        for column in C_data['train'].T]
+            mode_values = []
+            for column in C_data['train'].T:
+                known_values = column[column != unknown_value].astype(np.int64)
+                mode_values.append(int(np.argmax(np.bincount(known_values))))
             for column_idx in range(C_data['val'].shape[1]):
                 C_data['val'][:, column_idx][C_data['val'][:, column_idx] == unknown_value] = mode_values[column_idx]
 
@@ -440,6 +440,8 @@ def data_label_process(y_data, is_regression, info = None, encoder = None):
             mean, std = y_data['train'].mean(), y_data['train'].std()
         else:
             mean, std = info['mean'], info['std']
+        if std == 0:
+            std = 1.0
         y = {k: (v - mean) / std for k, v in y.items()}
         info = {'policy': 'mean_std', 'mean': mean, 'std': std}
         return y, info, None
@@ -454,9 +456,19 @@ def data_label_process(y_data, is_regression, info = None, encoder = None):
 
 
 def mse_safe_broadcast(input, target) -> torch.Tensor:
+    """MSE loss that squeezes a trailing singleton dim off ``input``/``target``
+    before computing the loss.
+
+    Regression heads emit ``(N, 1)`` while targets are usually ``(N,)`` (or vice
+    versa). Without squeezing, ``mse_loss`` would broadcast ``(N, 1)`` against
+    ``(N,)`` to ``(N, N)`` and silently compute the wrong (and huge) loss, so we
+    collapse the singleton dim on both sides and assert the shapes match.
+    """
     assert target.dim() in [1, 2], f"Unexpected target.shape = {target.shape}"
     if target.dim() == 2 and target.size(-1) == 1:
         target = target.squeeze(-1)
+    if input.dim() == 2 and input.size(-1) == 1 and target.dim() == 1:
+        input = input.squeeze(-1)
     assert input.shape == target.shape, f"{input.shape} != {target.shape}"
     return torch.nn.functional.mse_loss(input=input, target=target)
 
