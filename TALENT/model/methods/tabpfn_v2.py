@@ -12,6 +12,7 @@ from TALENT.model.lib.data import (
     data_label_process
 )
 from TALENT.model.lib.tabpfn_v2.tabpfn.utils import _fix_dtypes, validate_X_predict
+from pathlib import Path
 import time
 
 
@@ -44,10 +45,20 @@ class TabPFNMethod(Method):
 
 
     def construct_model(self, model_config = None,cat_indices=[]):
+        # A relative "./TALENT/..." path only resolves correctly if the caller's
+        # CWD happens to be LAMDA-TALENT/ itself — every actual benchmark
+        # entrypoint (main_a_scc_lamda_train_model_*.py) runs from CatKernel/,
+        # one level up, where that path silently pointed at a nonexistent
+        # CatKernel/TALENT/... and either auto-downloaded a redundant copy
+        # there (when internet + huggingface_hub happen to be available, as
+        # on a local dev machine) or hard-failed (as on a cluster node with
+        # neither). Resolve from this file's own location instead, so it's
+        # correct regardless of the caller's working directory.
+        models_tabpfn_dir = Path(__file__).resolve().parent.parent / "models" / "models_tabpfn"
         if self.is_regression:
             from TALENT.model.models.tabpfn_v2 import TabPFNRegressor
             self.model = TabPFNRegressor(
-                model_path = "./TALENT/model/models/models_tabpfn/tabpfn-v2-regressor.ckpt",
+                model_path = str(models_tabpfn_dir / "tabpfn-v2-regressor.ckpt"),
                 device = self.args.device,
                 random_state = self.args.seed,
                 n_estimators = 8,
@@ -57,7 +68,7 @@ class TabPFNMethod(Method):
         else:
             from TALENT.model.models.tabpfn_v2 import TabPFNClassifier
             self.model = TabPFNClassifier(
-                model_path = "./TALENT/model/models/models_tabpfn/tabpfn-v2-classifier.ckpt",
+                model_path = str(models_tabpfn_dir / "tabpfn-v2-classifier.ckpt"),
                 device = self.args.device,
                 random_state = self.args.seed,
                 n_estimators = 4,
