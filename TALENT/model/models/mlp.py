@@ -28,7 +28,7 @@ class MLP(nn.Module):
         self.head = nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
 
 
-    def forward(self, x, x_cat = None):
+    def forward(self, x, x_cat = None, return_embs=False):
 
         for layer in self.layers:
             x = layer(x)
@@ -38,4 +38,8 @@ class MLP(nn.Module):
         logit = self.head(x)        
         if self.d_out == 1:
             logit = logit.squeeze(-1)
-        return  logit
+
+        if return_embs:
+            return logit, x
+        else:
+            return  logit

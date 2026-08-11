@@ -5,6 +5,8 @@ import pickle
 import time
 import sklearn.metrics as skm
 import numpy as np
+
+
 class LinearRegressionMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -17,22 +19,23 @@ class LinearRegressionMethod(classical_methods):
             model_config = self.args.config['model']
         from sklearn.linear_model import LinearRegression
         self.model = LinearRegression(**model_config)
-    
+
     def fit(self, data, info, train=True, config=None):
         super().fit(data, info, train, config)
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
         if not train:
             return
         tic = time.time()
+        self.X_train = self.N['train']
         self.model.fit(self.N['train'], self.y['train'])
         self.trlog['best_res'] = self.model.score(self.N['val'], self.y['val'])
         time_cost = time.time() - tic
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'wb') as f:
             pickle.dump(self.model, f)
         return time_cost
-        
-    
-    def predict(self, data, info, model_name):
+
+
+    def predict(self, data, info, model_name, do_eval_stats=False):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)
@@ -43,6 +46,10 @@ class LinearRegressionMethod(classical_methods):
         # Denormalize regression predictions back to original scale for the returned value
         if self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
+        vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        self.eval_stats = dict(
+            coef=self.model.coef_,
+        ) if do_eval_stats else None
         return vres, metric_name, test_logit
     
     def metric(self, predictions, labels, y_info, threshold=None):

@@ -35,7 +35,7 @@ class MLP(nn.Module):
             else make_module(num_embeddings, n_features=d_num)
         )       
 
-    def forward(self, x_num, x_cat):
+    def forward(self, x_num, x_cat, return_embs=False):
         if self.num_embeddings is not None and self.d_num >0:
             x_num=self.num_embeddings(x_num).flatten(1)
         if x_num is not None and x_cat is not None:
@@ -51,7 +51,13 @@ class MLP(nn.Module):
             x = F.relu(x)
             if self.dropout:
                 x = F.dropout(x, self.dropout, self.training)
-        logit = self.head(x)        
+
+        embs = x
+        logit = self.head(x)
         if self.d_out == 1:
             logit = logit.squeeze(-1)
-        return  logit
+
+        if return_embs:
+            return logit, embs
+        else:
+            return  logit

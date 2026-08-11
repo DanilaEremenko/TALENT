@@ -1,8 +1,11 @@
 import os
 import shutil
+import sys
 import time
 import errno
 import pprint
+from pathlib import Path
+
 import torch
 import numpy as np
 import random
@@ -146,7 +149,8 @@ def set_seeds(base_seed: int, one_cuda_seed: bool = False) -> None:
 
 
 def get_device() -> torch.device:
-    return torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # return torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    return torch.device('cpu')
 
 
 import sklearn.metrics as skm
@@ -435,11 +439,25 @@ def get_deep_args():
     mkdir(args.save_path)
 
     # load config parameters
-    with pkg_resources.files(TALENT).joinpath("configs/default", args.model_type + '.json').open("r") as f:
-        default_para = json.load(f)
+    prefs = [pkg_resources.files(TALENT), Path('catkernel/talent')]
 
-    with pkg_resources.files(TALENT).joinpath("configs/opt_space", args.model_type + '.json').open("r") as f:
-        opt_space = json.load(f)
+    default_para = None
+    for pref in prefs:
+        p = pref.joinpath("configs/default", args.model_type + '.json')
+        if p.exists():
+            with p.open("r") as f:
+                default_para = json.load(f)
+
+    assert default_para is not None, args.model_type
+
+    opt_space = None
+    for pref in prefs:
+        p = pref.joinpath("configs/opt_space", args.model_type + '.json')
+        if p.exists():
+            with p.open("r") as f:
+                opt_space = json.load(f)
+    assert opt_space is not None
+
     args.config = default_para[args.model_type]
 
     args.seed = 0
@@ -710,17 +728,21 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         trial_configs.append(config)
         # method.fit(train_val_data, info, train=True, config=config)  
         # run with this config
-        try:
-            method.fit(train_val_data, info, train=True, config=config)
-            return method.trlog['best_res']
-        except Exception as e:
-            print(e)
-            from TALENT.model.lib.tuning_metric import worst_objective_value
-            return worst_objective_value(args, info['task_type'] == 'regression')
+        # try:
+        #     method.fit(train_val_data, info, train=True, config=config)
+        #     return method.trlog['best_res']
+        # except Exception as e:
+        #     print(e)
+        #     return 1e9 if info['task_type'] == 'regression' else 0.0
+        sys.stderr.write(f"{args.model_type} {args.dataset} trial: {config['model']}\n")
+        method.fit(train_val_data, info, train=True, config=config)
+        assert method.trlog['best_res'] is not None
+        return method.trlog['best_res']
 
     if osp.exists(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))) and args.retune == False:
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'rb') as fp:
             args.config = json.load(fp)
+        return args, None
     else:
         # get data property. The optimization direction follows the configured
         # tune_metric (defaults to minimize for regression / maximize for
@@ -734,6 +756,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
                     opt_space[args.model_type]['model'][key][0] = '?' + opt_space[args.model_type]['model'][key][0]
                     opt_space[args.model_type]['model'][key].insert(1, 0.0)
 
+        # set_seeds(args.seed)
         method = get_method(args.model_type)(args, info['task_type'] == 'regression')
 
         trial_configs = []
@@ -754,7 +777,8 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         args.config = trial_configs[best_trial_id]
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'w') as fp:
             json.dump(args.config, fp, sort_keys=True, indent=4)
-    return args
+
+        return args, study
 
 
 def get_method(model):

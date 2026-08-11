@@ -5,6 +5,9 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
+from utils_res_analysis.utils_xai_comparison.xai_sk import explain_scikit_all
+
+
 class XGBoostMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -28,6 +31,7 @@ class XGBoostMethod(classical_methods):
         fit_config.pop('n_bins')
         fit_config['eval_set'] = [(self.N['val'], self.y['val'])]
         tic = time.time()
+        self.X_train = self.N['train']
         self.model.fit(self.N['train'], self.y['train'],**fit_config)
         self._record_best_res(self.N['val'])
         time_cost = time.time() - tic
@@ -35,18 +39,22 @@ class XGBoostMethod(classical_methods):
             pickle.dump(self.model, f)
         return time_cost
     
-    def predict(self,data, info, model_name):
+    def predict(self,data, info, model_name, do_eval_stats=True):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)
         self.data_format(False, N, C, y)
         test_label = self.y_test
+        tic = time.time()
         if self.is_regression:
             test_logit = self.model.predict(self.N_test)
         else:
             test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        # Denormalize regression predictions back to original scale for the returned value
-        if self.is_regression and self.y_info.get('policy') == 'mean_std':
-            test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
+        self.eval_stats = explain_scikit_all(
+            model=self.model,
+            X_train=self.X_train,
+            X_test=self.N_test
+        ) if do_eval_stats else None
+        self.eval_stats |= dict(predict_time=time.time() - tic)
         return vres, metric_name, test_logit

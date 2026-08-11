@@ -5,6 +5,7 @@ import pickle
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
+
 class KnnMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -32,7 +33,7 @@ class KnnMethod(classical_methods):
             pickle.dump(self.model, f)
         return time_cost
 
-    def predict(self, data, info, model_name):
+    def predict(self, data, info, model_name, do_eval_stats=False):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)

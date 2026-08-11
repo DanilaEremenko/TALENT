@@ -30,7 +30,7 @@ class LogRegMethod(classical_methods):
         return time_cost
         
     
-    def predict(self, data, info, model_name):
+    def predict(self, data, info, model_name, do_eval_stats=False):
         N, C, y = data
         with open(ops.join(self.args.save_path , 'best-val-{}.pkl'.format(self.args.seed)), 'rb') as f:
             self.model = pickle.load(f)
@@ -38,4 +38,7 @@ class LogRegMethod(classical_methods):
         test_label = self.y_test
         test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
+        self.eval_stats = dict(
+            coef=self.model.coef_.tolist(),
+        ) if do_eval_stats else None
         return vres, metric_name, test_logit
