@@ -42,7 +42,7 @@ class _CVMethod:
         ):
             values = [log[key] for log in fold_logs if key in log]
             if values:
-                self.trlog[key] = sum(values) / len(values)
+                self.trlog[key] = float(np.asarray(values, dtype=float).mean())
 
         sys.stderr.write(f"trial: {fold_scores}\n")
         self.trlog['fold_scores'] = fold_scores
