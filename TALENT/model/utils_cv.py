@@ -10,6 +10,19 @@ import numpy as np
 from catkernel.talent import utils as talent_utils
 
 
+class _CVFolds(list):
+    """List of folds compatible with the ordinary tuner data interface."""
+
+    def __getitem__(self, index):
+        # The common tuner uses train_val_data[2]["train"] to constrain
+        # model-specific search spaces (currently KNN n_neighbors).  Expose
+        # the first fold's targets for that read while keeping normal list
+        # iteration for CV training.
+        if index == 2:
+            return super().__getitem__(0)[2]
+        return super().__getitem__(index)
+
+
 class _CVMethod:
     """Run one LAMDA method independently on every persisted CV fold."""
 
@@ -49,7 +62,15 @@ class _CVMethod:
         return self
 
 
-def tune_hyper_parameters(args, opt_space, folds, info):
+def tune_hyper_parameters(
+        args,
+        opt_space,
+        folds,
+        info,
+        feature_transform_f=None,
+        feature_sampler_f=None,
+        feature_opt_space=None,
+):
     """Tune parameters by averaging validation scores over all CV folds.
 
     ``folds`` is a list of regular LAMDA ``train_val_data`` tuples.  The
@@ -57,6 +78,7 @@ def tune_hyper_parameters(args, opt_space, folds, info):
     defaults stay identical to the non-CV path.
     """
     original_get_method = talent_utils.get_method
+    folds = _CVFolds(folds)
 
     def cv_get_method(model_name):
         method_factory = original_get_method(model_name)
@@ -66,7 +88,15 @@ def tune_hyper_parameters(args, opt_space, folds, info):
 
     talent_utils.get_method = cv_get_method
     try:
-        return talent_utils.tune_hyper_parameters(args, opt_space, folds, info)
+        return talent_utils.tune_hyper_parameters(
+            args,
+            opt_space,
+            folds,
+            info,
+            feature_transform_f=feature_transform_f,
+            feature_sampler_f=feature_sampler_f,
+            feature_opt_space=feature_opt_space,
+        )
     finally:
         talent_utils.get_method = original_get_method
 

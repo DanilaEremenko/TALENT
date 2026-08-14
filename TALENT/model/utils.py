@@ -579,7 +579,15 @@ def show_results(args, info, metric_name, loss_list, results_list, time_list):
     print('-' * 50)
 
 
-def tune_hyper_parameters(args, opt_space, train_val_data, info):
+def tune_hyper_parameters(
+        args,
+        opt_space,
+        train_val_data,
+        info,
+        feature_transform_f=None,
+        feature_sampler_f=None,
+        feature_opt_space=None,
+):
     """
     Tune hyper-parameters.
 
@@ -593,6 +601,11 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
     import optuna.samplers
     import optuna.trial
     def objective(trial):
+        feature_config = (
+            feature_sampler_f(trial)
+            if feature_sampler_f is not None
+            else sample_parameters(trial, feature_opt_space or {}, {})
+        )
         config = {}
         try:
             opt_space[args.model_type]['training']['n_bins'] = [
@@ -724,7 +737,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
                 # same range as for non-glu activations
                 config['model']['d_ffn_factor'] *= 2 / 3
 
-        trial_configs.append(config)
+        trial_configs.append((config, feature_config))
         # method.fit(train_val_data, info, train=True, config=config)  
         # run with this config
         # try:
@@ -733,14 +746,30 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         # except Exception as e:
         #     print(e)
         #     return 1e9 if info['task_type'] == 'regression' else 0.0
-        sys.stderr.write(f"{args.model_type} {args.dataset} trial: {config['model']}\n")
-        method.fit(train_val_data, info, train=True, config=config)
+        sys.stderr.write(
+            f"{args.model_type} {args.dataset} trial: "
+            f"model={config['model']}, fe={feature_config}\n"
+        )
+        trial_data = (
+            feature_transform_f(train_val_data, feature_config)
+            if feature_transform_f is not None
+            else train_val_data
+        )
+        method.fit(trial_data, info, train=True, config=config)
         assert method.trlog['best_res'] is not None
         return method.trlog['best_res']
 
-    if osp.exists(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))) and args.retune == False:
+    feature_path = osp.join(args.save_path, 'feature-tuned.json')
+    model_path = osp.join(args.save_path, '{}-tuned.json'.format(args.model_type))
+    feature_ready = not (feature_opt_space or feature_sampler_f) or osp.exists(feature_path)
+    if osp.exists(model_path) and feature_ready and args.retune == False:
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'rb') as fp:
             args.config = json.load(fp)
+        if osp.exists(feature_path):
+            with open(feature_path, 'r') as fp:
+                args.feature_config = json.load(fp)
+        else:
+            args.feature_config = {}
         return args, None
     else:
         # get data property
@@ -770,10 +799,15 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         best_trial_id = study.best_trial.number
         # update config files        
         print('Best Hyper-Parameters')
-        print(trial_configs[best_trial_id])
-        args.config = trial_configs[best_trial_id]
+        best_model_config, best_feature_config = trial_configs[best_trial_id]
+        print(best_model_config, best_feature_config)
+        args.config = best_model_config
+        args.feature_config = best_feature_config
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'w') as fp:
             json.dump(args.config, fp, sort_keys=True, indent=4)
+        if feature_opt_space or feature_sampler_f:
+            with open(feature_path, 'w') as fp:
+                json.dump(args.feature_config, fp, sort_keys=True, indent=4)
 
         return args, study
 
