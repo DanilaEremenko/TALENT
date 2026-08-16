@@ -737,6 +737,8 @@ def tune_hyper_parameters(
                 # same range as for non-glu activations
                 config['model']['d_ffn_factor'] *= 2 / 3
 
+        trial.set_user_attr("model_config", config)
+        trial.set_user_attr("feature_config", feature_config)
         trial_configs.append((config, feature_config))
         # method.fit(train_val_data, info, train=True, config=config)  
         # run with this config
@@ -786,20 +788,63 @@ def tune_hyper_parameters(
         method = get_method(args.model_type)(args, info['task_type'] == 'regression')
 
         trial_configs = []
+        db_path = Path(args.save_path) / "optuna_trials.db"
+        storage = f"sqlite:///{db_path.resolve().as_posix()}"
         study = optuna.create_study(
             direction=direction,
             sampler=optuna.samplers.TPESampler(seed=0),
+            study_name="optuna",
+            storage=storage,
+            load_if_exists=True,
         )
-        study.optimize(
-            objective,
-            **{'n_trials': args.n_trials},
-            show_progress_bar=True,
+        n_finished_trials = sum(
+            trial.state.is_finished() for trial in study.trials
         )
+        n_trials_remaining = max(args.n_trials - n_finished_trials, 0)
+        has_completed_trial = any(
+            trial.state == optuna.trial.TrialState.COMPLETE
+            and trial.value is not None
+            for trial in study.trials
+        )
+
+        def stop_on_perfect_score(current_study, current_trial):
+            if (
+                current_study.direction == optuna.study.StudyDirection.MAXIMIZE
+                and current_study.best_value >= 1.0
+            ):
+                current_study.stop()
+
+        if (
+            n_trials_remaining
+            and not (
+                has_completed_trial
+                and
+                study.direction == optuna.study.StudyDirection.MAXIMIZE
+                and study.best_value >= 1.0
+            )
+        ):
+            study.optimize(
+                objective,
+                n_trials=n_trials_remaining,
+                callbacks=[stop_on_perfect_score],
+                show_progress_bar=True,
+            )
         # get best configs
-        best_trial_id = study.best_trial.number
+        if not has_completed_trial:
+            has_completed_trial = any(
+                trial.state == optuna.trial.TrialState.COMPLETE
+                and trial.value is not None
+                for trial in study.trials
+            )
+        if not has_completed_trial:
+            raise RuntimeError(
+                f"Optuna study has no completed trials: {db_path}"
+            )
+        best_trial = study.best_trial
         # update config files        
         print('Best Hyper-Parameters')
-        best_model_config, best_feature_config = trial_configs[best_trial_id]
+        best_model_config = best_trial.user_attrs["model_config"]
+        best_feature_config = best_trial.user_attrs.get("feature_config", {})
         print(best_model_config, best_feature_config)
         args.config = best_model_config
         args.feature_config = best_feature_config
