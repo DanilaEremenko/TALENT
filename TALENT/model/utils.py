@@ -588,6 +588,7 @@ def tune_hyper_parameters(
         feature_sampler_f=None,
         feature_opt_space=None,
 ):
+    assert 0
     """
     Tune hyper-parameters.
 
@@ -809,19 +810,19 @@ def tune_hyper_parameters(
 
         def stop_on_perfect_score(current_study, current_trial):
             if (
-                current_study.direction == optuna.study.StudyDirection.MAXIMIZE
-                and current_study.best_value >= 1.0
+                    current_study.direction == optuna.study.StudyDirection.MAXIMIZE
+                    and current_study.best_value >= 1.0
             ):
                 current_study.stop()
 
         if (
-            n_trials_remaining
-            and not (
+                n_trials_remaining
+                and not (
                 has_completed_trial
                 and
                 study.direction == optuna.study.StudyDirection.MAXIMIZE
                 and study.best_value >= 1.0
-            )
+        )
         ):
             study.optimize(
                 objective,
