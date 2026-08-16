@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -35,11 +36,72 @@ class _CVMethod:
     def fit(self, folds, info, train=True, config=None):
         fold_scores = []
         fold_logs = []
-        for fold_data in folds:
-            method = self._method_factory(self._args, self._is_regression)
-            method.fit(fold_data, info, train=train, config=copy.deepcopy(config))
-            score = method.trlog.get('best_res')
-            assert score is not None
+        for fold_i, fold_data in enumerate(folds):
+            fold_args = copy.deepcopy(self._args)
+            fold_args.save_path = str(
+                Path(self._args.save_path) / f"cv_fold_{fold_i}"
+            )
+            Path(fold_args.save_path).mkdir(parents=True, exist_ok=True)
+            # A CV fold directory is reused by consecutive Optuna trials.
+            # Never let a trial read a checkpoint produced by a previous
+            # trial if this trial failed before writing its own checkpoint.
+            for checkpoint_name in (
+                f'best-val-{fold_args.seed}.pth',
+                f'best-val-{fold_args.seed}.pt',
+                f'best-val-{fold_args.seed}.pkl',
+                f'best-val-{fold_args.seed}.joblib',
+                f'epoch-last-{fold_args.seed}.pth',
+                'trlog',
+            ):
+                checkpoint_path = Path(fold_args.save_path) / checkpoint_name
+                if checkpoint_path.exists():
+                    checkpoint_path.unlink()
+            method = self._method_factory(fold_args, self._is_regression)
+            N, C, y = fold_data
+            # Persisted val is the out-fold. Only fit_data receives train as
+            # val for early stopping.
+            out_X = N["val"]
+            out_y = y["val"]
+            fit_data = (
+                {"train": N["train"], "val": N["train"]},
+                C,
+                {"train": y["train"], "val": y["train"]},
+            )
+            out_data = (
+                {"test": out_X},
+                C,
+                {"test": out_y},
+            )
+            val_stats = [
+                {
+                    "keys": list(f[0].keys()),
+                    "shape": getattr(f[0].get("val"), "shape", None),
+                    "min": float(np.nanmin(f[0]["val"])),
+                    "max": float(np.nanmax(f[0]["val"])),
+                }
+                for f in folds
+            ]
+            assert not all([(f[0]['val'] == 0).all() for f in folds]), val_stats
+            method.fit(fit_data, info, train=train, config=copy.deepcopy(config))
+            if getattr(method, 'grad_exploded', False):
+                self.trlog['best_res'] = None
+                self.trlog['fold_scores'] = []
+                sys.stderr.write(f'CV fold {fold_i}: NW exploded during fit\n')
+                return self
+            checkpoint_paths = [
+                Path(fold_args.save_path) / f'best-val-{fold_args.seed}{suffix}'
+                for suffix in ('.pth', '.pt', '.pkl', '.joblib')
+            ]
+            assert any(path.is_file() for path in checkpoint_paths), checkpoint_paths
+            prediction = method.predict(
+                out_data,
+                info,
+                model_name=self._args.evaluate_option,
+            )
+            # Deep methods return (loss, metrics, names, predictions), while
+            # classical methods return (metrics, names, predictions).
+            metrics = prediction[1] if len(prediction) == 4 else prediction[0]
+            score = metrics[0]
             fold_scores.append(float(score))
             fold_logs.append(method.trlog)
 
