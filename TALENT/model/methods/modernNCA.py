@@ -1,5 +1,3 @@
-from sklearn.cluster import KMeans
-
 from TALENT.model.methods.base import Method
 import time
 import torch
@@ -197,6 +195,7 @@ class ModernNCAMethod(Method):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
+                    from utils_xai_local.clustering import get_emb_clusters
                     common_inf_args = dict(
                         y=None,
                         candidate_x=candidate_x,
@@ -214,7 +213,7 @@ class ModernNCAMethod(Method):
                                 ).detach().cpu().numpy().tolist()
                                 for cls in range(n_targets)
                             ],
-                            cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
+                            **get_emb_clusters(embs),
                         )
                     )
 

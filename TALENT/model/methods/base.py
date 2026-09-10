@@ -4,7 +4,6 @@ import numpy as np
 import time
 import os.path as osp
 
-from sklearn.cluster import KMeans
 from tqdm import tqdm
 import sklearn.metrics as skm
 from sklearn.preprocessing import label_binarize
@@ -217,6 +216,7 @@ class Method(object, metaclass=abc.ABCMeta):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
+                    from utils_xai_local.clustering import get_emb_clusters
                     model_fn = lambda x: self.model(*get_num_cat(x)).unsqueeze(1) if self.is_regression \
                         else self.model(*get_num_cat(x))
                     n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).shape[1]
@@ -229,7 +229,7 @@ class Method(object, metaclass=abc.ABCMeta):
                                 ).detach().cpu().numpy().tolist()
                                 for cls in range(n_targets)
                             ],
-                            cluster_test=KMeans(n_clusters=3).fit_predict(embs).tolist()
+                            **get_emb_clusters(embs),
                         )
                     )
 

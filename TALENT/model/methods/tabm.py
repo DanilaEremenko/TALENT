@@ -4,7 +4,6 @@ import numpy as np
 import time
 import os.path as osp
 
-from sklearn.cluster import KMeans
 from tqdm import tqdm
 import sklearn.metrics as skm
 
@@ -93,6 +92,7 @@ class TabMMethod(Method):
 
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
+                    from utils_xai_local.clustering import get_emb_clusters
                     model_fn = lambda x: self.model(*get_num_cat(x)).mean(dim=1).unsqueeze(1) if self.is_regression else self.model(*get_num_cat(x)).mean(dim=1)
                     n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).mean(dim=1).shape[1]
                     eval_stats_l.append(
@@ -104,7 +104,7 @@ class TabMMethod(Method):
                                 ).detach().cpu().numpy().tolist()
                                 for cls in range(n_targets)
                             ],
-                            cluster_test=KMeans(n_clusters=3).fit_predict(embs.mean(dim=1)).tolist()
+                            **get_emb_clusters(embs.mean(dim=1)),
                         )
                     )
 
