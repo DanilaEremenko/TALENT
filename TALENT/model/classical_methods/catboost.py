@@ -118,7 +118,6 @@ class CatBoostMethod(classical_methods):
                 X_test=test_data,
                 y_train=self.y['train'],
                 y_test=test_label,
-                n_clusters=3,
             ),
             predict_time=time.time() - tic
         ) if do_eval_stats else None

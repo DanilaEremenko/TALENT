@@ -6,6 +6,8 @@ import time
 import sklearn.metrics as skm
 import numpy as np
 
+from utils_xai_local.clustering import get_emb_clusters
+
 
 class LinearRegressionMethod(classical_methods):
     def __init__(self, args, is_regression):
@@ -21,6 +23,18 @@ class LinearRegressionMethod(classical_methods):
         self.model = LinearRegression(**model_config)
 
     def fit(self, data, info, train=True, config=None):
+        # LinearRegression has no tunable hyperparameters, so its saved
+        # best-params file is always {} (see main_a_scc_lamda_train_model_
+        # classical_synth.py's LinearRegression branch). Under ONLY_INFERENCE,
+        # that {} gets loaded straight into self.args.config, leaving it
+        # without 'fit'/'model' keys at all -- data_format() then KeyErrors on
+        # config['fit']['n_bins'], and construct_model() on config['model'].
+        # Backfill both (n_bins from the top-level args.n_bins default,
+        # model kwargs as empty -> plain sklearn LinearRegression()) before
+        # delegating to the shared fit(), instead of relaxing these lookups
+        # for every classical method.
+        self.args.config.setdefault('fit', {}).setdefault('n_bins', self.args.n_bins)
+        self.args.config.setdefault('model', {})
         super().fit(data, info, train, config)
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
         if not train:
@@ -48,6 +62,7 @@ class LinearRegressionMethod(classical_methods):
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
         self.eval_stats = dict(
             coef=self.model.coef_,
+            **get_emb_clusters(self.N_test),
         ) if do_eval_stats else None
         return vres, metric_name, test_logit
     
