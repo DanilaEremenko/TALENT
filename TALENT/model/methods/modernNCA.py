@@ -16,6 +16,7 @@ from TALENT.model.lib.data import (
     data_label_process,
     data_loader_process
 )
+from utils_xai_local.ig import explain_nn_ig_with_target_backward_variable
 
 
 def make_random_batches(
@@ -42,6 +43,7 @@ class ModernNCAMethod(Method):
         # tabr_ohe is the cat_policy doing one-hot encoding for categorical features, but do not concatenate the one-hot encoded features with the numerical features
         # we reuse it from tabr repo, and do not change it
         assert (args.num_policy == 'none')
+        self.grads_by_epochs = []
 
     def construct_model(self, model_config=None):
         from TALENT.model.models.modernNCA import ModernNCA
@@ -202,7 +204,15 @@ class ModernNCAMethod(Method):
                         candidate_y=candidate_y,
                         is_train=False,
                     )
-                    model_fn = lambda x: self.model(x=x, **common_inf_args).unsqueeze(1) if self.is_regression else self.model(x=x, **common_inf_args)
+
+                    def model_fn_tup(x):
+                        tup = self.model(x=x, **common_inf_args, return_weights_and_embs=True)
+                        y = tup[0].unsqueeze(1) if self.is_regression else tup[0]
+                        return y, *tup[1:]
+
+                    def model_fn(x):
+                        return model_fn_tup(x)[0]
+
                     n_targets = 1 if self.is_regression else self.model(x=x, **common_inf_args).shape[1]
                     eval_stats_l.append(
                         dict(
@@ -213,7 +223,25 @@ class ModernNCAMethod(Method):
                                 ).detach().cpu().numpy().tolist()
                                 for cls in range(n_targets)
                             ],
-                            **get_emb_clusters(embs),
+                            ig_values_step_abs=[
+                                explain_nn_ig_with_target_backward_variable(
+                                    X_train=candidate_x, X_test=x,
+                                    model=model_fn_tup, target=cls,
+                                    target_backward_variable_i=None,
+                                    ig_step_lamda=lambda x: torch.abs(x)
+                                ).detach().cpu().numpy().tolist()
+                                for cls in range(n_targets)
+                            ],
+                            # ig_values_step=[
+                            #     explain_nn_ig_with_target_backward_variable(
+                            #         X_train=candidate_x, X_test=x,
+                            #         model=model_fn_tup, target=cls,
+                            #         target_backward_variable_i=None,
+                            #         ig_step_lamda=lambda x: x
+                            #     ).detach().cpu().numpy().tolist()
+                            #     for cls in range(n_targets)
+                            # ],
+                            **get_emb_clusters(embs)
                         )
                     )
 
@@ -223,7 +251,7 @@ class ModernNCAMethod(Method):
         self.predict_time = time.time() - tic
         if do_eval_stats:
             self.eval_stats = dict(eval_stats_l=eval_stats_l)
-            self.eval_stats |= dict(predict_time=self.predict_time)
+            self.eval_stats |= dict(predict_time=self.predict_time, grads_by_epochs=self.grads_by_epochs)
 
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
@@ -273,6 +301,7 @@ class ModernNCAMethod(Method):
             else:
                 x, candidate_x = torch.cat([X_num, X_cat], dim=1), torch.cat([candidate_x_num, candidate_x_cat], dim=1)
 
+            x.requires_grad = True
             pred = self.model(
                 x=x,
                 y=y,
@@ -286,6 +315,7 @@ class ModernNCAMethod(Method):
             tl.add(loss.item())
             self.optimizer.zero_grad()
             loss.backward()
+            self.grads_by_epochs.append(x.grad.abs().sum(axis=0).detach().cpu().numpy().tolist())
             self.optimizer.step()
 
             if (i - 1) % 50 == 0 or i == len(self.train_loader):

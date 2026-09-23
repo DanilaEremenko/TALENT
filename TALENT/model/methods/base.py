@@ -25,6 +25,7 @@ from TALENT.model.lib.data import (
     data_loader_process,
     get_categories
 )
+from utils_xai_local.ig import explain_nn_ig_with_target_backward_variable
 
 
 def check_softmax(logits):
@@ -69,6 +70,7 @@ class Method(object, metaclass=abc.ABCMeta):
 
         self.args.device = get_device()
 
+        self.grads_by_epochs = []
 
     def reset_stats_withconfig(self, config):
         """
@@ -82,7 +84,7 @@ class Method(object, metaclass=abc.ABCMeta):
         self.continue_training = True
         self.timer = Timer()
         self.config = self.args.config = config
-        
+
         # train statistics
         self.trlog = {}
         self.trlog['args'] = vars(self.args)
@@ -109,7 +111,7 @@ class Method(object, metaclass=abc.ABCMeta):
             self.N,self.num_encoder = num_enc_process(self.N,num_policy = self.args.num_policy, n_bins = self.args.config['training']['n_bins'],y_train=self.y['train'],is_regression=self.is_regression)
             self.N, self.C, self.ord_encoder, self.mode_values, self.cat_encoder = data_enc_process(self.N, self.C, self.args.cat_policy, self.y['train'])
             self.N, self.normalizer = data_norm_process(self.N, self.args.normalization, self.args.seed)
-            
+
             if self.is_regression:
                 self.d_out = 1
             else:
@@ -123,7 +125,7 @@ class Method(object, metaclass=abc.ABCMeta):
             N_test,_ = num_enc_process(N_test,num_policy=self.args.num_policy,n_bins = self.args.config['training']['n_bins'],y_train=None,encoder = self.num_encoder)
             N_test, C_test, _, _, _ = data_enc_process(N_test, C_test, self.args.cat_policy, None, self.ord_encoder, self.mode_values, self.cat_encoder)
             N_test, _ = data_norm_process(N_test, self.args.normalization, self.args.seed, self.normalizer)
-            _, _, _, self.test_loader, _ =  data_loader_process(self.is_regression, (N_test, C_test), y_test, self.y_info, self.args.device, self.args.batch_size, is_train = False,is_float=self.args.use_float)                      
+            _, _, _, self.test_loader, _ =  data_loader_process(self.is_regression, (N_test, C_test), y_test, self.y_info, self.args.device, self.args.batch_size, is_train = False,is_float=self.args.use_float)
             if N_test is not None and C_test is not None:
                 self.N_test,self.C_test = N_test['test'],C_test['test']
             elif N_test is None and C_test is not None:
@@ -131,8 +133,8 @@ class Method(object, metaclass=abc.ABCMeta):
             else:
                 self.N_test,self.C_test = N_test['test'],None
             self.y_test = y_test['test']
-    
-    
+
+
     def fit(self, data, info, train = True, config = None):
         """
         Fit the method to the data.
@@ -153,8 +155,8 @@ class Method(object, metaclass=abc.ABCMeta):
         self.data_format(is_train = True)
         self.construct_model()
         self.optimizer = torch.optim.AdamW(
-            self.model.parameters(), 
-            lr=self.args.config['training']['lr'], 
+            self.model.parameters(),
+            lr=self.args.config['training']['lr'],
             weight_decay=self.args.config['training']['weight_decay']
         )
         # if not train, skip the training process. such as load the checkpoint and directly predict the results
@@ -191,7 +193,7 @@ class Method(object, metaclass=abc.ABCMeta):
         N, C, y = data
         self.model.load_state_dict(torch.load(osp.join(self.args.save_path, model_name + '-{}.pth'.format(str(self.args.seed))))['params'])
         print('best epoch {}, best val res={:.4f}'.format(self.trlog['best_epoch'], self.trlog['best_res']))
-        
+
         ## Evaluation Stage
         self.model.eval()
         self.data_format(False, N, C, y)
@@ -217,8 +219,15 @@ class Method(object, metaclass=abc.ABCMeta):
                 if i == 0 and do_eval_stats:
                     from utils_xai_local.ig import explain_nn_ig
                     from utils_xai_local.clustering import get_emb_clusters
-                    model_fn = lambda x: self.model(*get_num_cat(x)).unsqueeze(1) if self.is_regression \
-                        else self.model(*get_num_cat(x))
+
+                    def model_fn_tup(x):
+                        tup = self.model(*get_num_cat(x), return_embs=True)
+                        y = tup[0].unsqueeze(1) if self.is_regression else tup[0]
+                        return y, *tup[1:]
+
+                    def model_fn(x):
+                        return model_fn_tup(x)[0]
+
                     n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).shape[1]
                     eval_stats_l.append(
                         dict(
@@ -229,7 +238,25 @@ class Method(object, metaclass=abc.ABCMeta):
                                 ).detach().cpu().numpy().tolist()
                                 for cls in range(n_targets)
                             ],
-                            **get_emb_clusters(embs),
+                            ig_values_step_abs=[
+                                explain_nn_ig_with_target_backward_variable(
+                                    X_train=self.N['train'], X_test=X,
+                                    target=cls, model=model_fn_tup,
+                                    target_backward_variable_i=None,
+                                    ig_step_lamda=lambda x: torch.abs(x)
+                                ).detach().cpu().numpy().tolist()
+                                for cls in range(n_targets)
+                            ],
+                            # ig_values_step=[
+                            #     explain_nn_ig_with_target_backward_variable(
+                            #         X_train=self.N['train'], X_test=X,
+                            #         target=cls, model=model_fn_tup,
+                            #         target_backward_variable_i=None,
+                            #         ig_step_lamda=lambda x: x
+                            #     ).detach().cpu().numpy().tolist()
+                            #     for cls in range(n_targets)
+                            # ],
+                            **get_emb_clusters(embs)
                         )
                     )
 
@@ -239,8 +266,8 @@ class Method(object, metaclass=abc.ABCMeta):
         self.predict_time = time.time() - tic
         if do_eval_stats:
             self.eval_stats = dict(eval_stats_l=eval_stats_l)
-            self.eval_stats |= dict(predict_time=self.predict_time)
-        
+            self.eval_stats |= dict(predict_time=self.predict_time, grads_by_epochs=self.grads_by_epochs)
+
         test_logit = torch.cat(test_logit, 0)
         test_label = torch.cat(test_label, 0)
         
@@ -270,16 +297,21 @@ class Method(object, metaclass=abc.ABCMeta):
             self.train_step = self.train_step + 1
             if self.N is not None and self.C is not None:
                 X_num, X_cat = X[0], X[1]
+                X_num.requires_grad = True
+                X_cat.requires_grad = True
             elif self.C is not None and self.N is None:
                 X_num, X_cat = None, X
+                X_cat.requires_grad = True
             else:
                 X_num, X_cat = X, None
+                X_num.requires_grad = True
 
             loss = self.criterion(self.model(X_num, X_cat), y)
 
             tl.add(loss.item())
             self.optimizer.zero_grad()
             loss.backward()
+            self.grads_by_epochs.append(X_num.grad.abs().sum(axis=0).detach().cpu().numpy().tolist())
             self.optimizer.step()
             
             if (i-1) % 50 == 0 or i == len(self.train_loader):
