@@ -6,7 +6,8 @@ import time
 import sklearn.metrics as skm
 import numpy as np
 
-from utils_xai_local.clustering import get_emb_clusters
+from utils_xai_local.talent.methods.lr import LRArgs
+from utils_xai_local.talent.registry import unified_explain_points
 
 
 class LinearRegressionMethod(classical_methods):
@@ -60,9 +61,9 @@ class LinearRegressionMethod(classical_methods):
         if self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.eval_stats = dict(
-            coef=self.model.coef_,
-            **get_emb_clusters(self.N_test),
+        self.eval_stats = unified_explain_points(
+            method=self,
+            method_args=LRArgs(x=self.N_test)
         ) if do_eval_stats else None
         return vres, metric_name, test_logit
     

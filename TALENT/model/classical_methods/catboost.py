@@ -12,7 +12,8 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-from utils_xai_local.shap import explain_catboost
+from utils_xai_local.talent.methods.cb import CBArgs
+from utils_xai_local.talent.registry import unified_explain_points
 
 
 class CatBoostMethod(classical_methods):
@@ -112,12 +113,9 @@ class CatBoostMethod(classical_methods):
             test_logit = self.model.predict_proba(test_data)
 
         self.eval_stats = dict(
-            **explain_catboost(
-                model=self.model,
-                X_train=self.X_train,
-                X_test=test_data,
-                y_train=self.y['train'],
-                y_test=test_label,
+            **unified_explain_points(
+                method=self,
+                method_args=CBArgs(x=test_data, y_test=test_label)
             ),
             predict_time=time.time() - tic
         ) if do_eval_stats else None

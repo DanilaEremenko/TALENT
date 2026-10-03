@@ -44,6 +44,8 @@ def check_softmax(logits):
 
 
 from TALENT.model.methods.base import Method
+from utils_xai_local.talent.methods.tabm import TabMArgs
+from utils_xai_local.talent.registry import unified_explain_points
 
 class TabMMethod(Method):
     def __init__(self, args, is_regression):
@@ -91,20 +93,10 @@ class TabMMethod(Method):
                 pred, embs = self.model(X_num, X_cat, return_embs=True)
 
                 if i == 0 and do_eval_stats:
-                    from utils_xai_local.ig import explain_nn_ig
-                    from utils_xai_local.clustering import get_emb_clusters
-                    model_fn = lambda x: self.model(*get_num_cat(x)).mean(dim=1).unsqueeze(1) if self.is_regression else self.model(*get_num_cat(x)).mean(dim=1)
-                    n_targets = 1 if self.is_regression else self.model(*get_num_cat(X)).mean(dim=1).shape[1]
                     eval_stats_l.append(
-                        dict(
-                            ig_values=[
-                                explain_nn_ig(
-                                    X_train=X, X_test=X,
-                                    model=model_fn, target=cls
-                                ).detach().cpu().numpy().tolist()
-                                for cls in range(n_targets)
-                            ],
-                            **get_emb_clusters(embs.mean(dim=1)),
+                        unified_explain_points(
+                            method=self,
+                            method_args=TabMArgs(x=X, embs=embs)
                         )
                     )
 

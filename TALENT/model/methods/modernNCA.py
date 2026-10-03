@@ -16,7 +16,8 @@ from TALENT.model.lib.data import (
     data_label_process,
     data_loader_process
 )
-from utils_xai_local.ig import explain_nn_ig_with_target_backward_variable
+from utils_xai_local.talent.methods.mnca import MNCAArgs
+from utils_xai_local.talent.registry import unified_explain_points
 
 
 def make_random_batches(
@@ -196,52 +197,15 @@ class ModernNCAMethod(Method):
                 pred = pred.squeeze(-1)
 
                 if i == 0 and do_eval_stats:
-                    from utils_xai_local.ig import explain_nn_ig
-                    from utils_xai_local.clustering import get_emb_clusters
-                    common_inf_args = dict(
-                        y=None,
-                        candidate_x=candidate_x,
-                        candidate_y=candidate_y,
-                        is_train=False,
-                    )
-
-                    def model_fn_tup(x):
-                        tup = self.model(x=x, **common_inf_args, return_weights_and_embs=True)
-                        y = tup[0].unsqueeze(1) if self.is_regression else tup[0]
-                        return y, *tup[1:]
-
-                    def model_fn(x):
-                        return model_fn_tup(x)[0]
-
-                    n_targets = 1 if self.is_regression else self.model(x=x, **common_inf_args).shape[1]
                     eval_stats_l.append(
-                        dict(
-                            ig_values=[
-                                explain_nn_ig(
-                                    X_train=candidate_x, X_test=x,
-                                    model=model_fn, target=cls
-                                ).detach().cpu().numpy().tolist()
-                                for cls in range(n_targets)
-                            ],
-                            ig_values_step_abs=[
-                                explain_nn_ig_with_target_backward_variable(
-                                    X_train=candidate_x, X_test=x,
-                                    model=model_fn_tup, target=cls,
-                                    target_backward_variable_i=None,
-                                    ig_step_lamda=lambda x: torch.abs(x)
-                                ).detach().cpu().numpy().tolist()
-                                for cls in range(n_targets)
-                            ],
-                            # ig_values_step=[
-                            #     explain_nn_ig_with_target_backward_variable(
-                            #         X_train=candidate_x, X_test=x,
-                            #         model=model_fn_tup, target=cls,
-                            #         target_backward_variable_i=None,
-                            #         ig_step_lamda=lambda x: x
-                            #     ).detach().cpu().numpy().tolist()
-                            #     for cls in range(n_targets)
-                            # ],
-                            **get_emb_clusters(embs)
+                        unified_explain_points(
+                            method=self,
+                            method_args=MNCAArgs(
+                                x=x,
+                                embs=embs,
+                                candidate_x=candidate_x,
+                                candidate_y=candidate_y
+                            )
                         )
                     )
 
