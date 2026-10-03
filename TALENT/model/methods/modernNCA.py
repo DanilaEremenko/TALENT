@@ -186,7 +186,7 @@ class ModernNCAMethod(Method):
                     x, candidate_x = torch.cat([X_num, X_cat], dim=1), torch.cat([candidate_x_num, candidate_x_cat],
                                                                                  dim=1)
 
-                pred, _, embs = self.model(
+                pred, weights, embs = self.model(
                     x=x,
                     y=None,
                     candidate_x=candidate_x,
@@ -202,6 +202,9 @@ class ModernNCAMethod(Method):
                             method=self,
                             method_args=MNCAArgs(
                                 x=x,
+                                x_B=candidate_x,
+                                y_B=candidate_y,
+                                W=weights,
                                 embs=embs,
                                 candidate_x=candidate_x,
                                 candidate_y=candidate_y
