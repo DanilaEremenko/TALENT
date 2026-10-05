@@ -9,8 +9,12 @@ class MLPMethod(Method):
         from TALENT.model.models.mlp import MLP
         if model_config is None:
             model_config = self.args.config['model']
+        if self.C is not None:
+            d_in = self.d_in + self.C['train'].shape[1]
+        else:
+            d_in = self.d_in
         self.model = MLP(
-            d_in=self.d_in,
+            d_in=d_in,
             d_out=self.d_out,
             **model_config
         ).to(self.args.device)

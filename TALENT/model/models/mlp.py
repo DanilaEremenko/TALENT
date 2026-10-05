@@ -29,6 +29,12 @@ class MLP(nn.Module):
 
 
     def forward(self, x, x_cat = None, return_embs=False):
+        # x_cat is already numerically encoded (e.g. tabr_ohe) when it is not None,
+        # so it is simply concatenated with the numerical features.
+        if x is None:
+            x = x_cat.to(torch.get_default_dtype()) if x_cat.dtype in (torch.int32, torch.int64) else x_cat
+        elif x_cat is not None:
+            x = torch.cat([x, x_cat.to(x.dtype)], dim=1)
 
         for layer in self.layers:
             x = layer(x)
