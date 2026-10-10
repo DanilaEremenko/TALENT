@@ -4,6 +4,9 @@ import os.path as ops
 import pickle
 import time
 
+from utils_xai_local.talent.methods.lr import LRArgs
+from utils_xai_local.talent.registry import unified_explain_points
+
 class LogRegMethod(classical_methods):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -38,7 +41,10 @@ class LogRegMethod(classical_methods):
         test_label = self.y_test
         test_logit = self.model.predict_proba(self.N_test)
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
-        self.eval_stats = dict(
-            coef=self.model.coef_.tolist(),
+        # Same eval_stats as LinearRegressionMethod: coef plus the post-hoc
+        # clustering of the test features (get_emb_clusters).
+        self.eval_stats = unified_explain_points(
+            method=self,
+            method_args=LRArgs(x=self.N_test)
         ) if do_eval_stats else None
         return vres, metric_name, test_logit
